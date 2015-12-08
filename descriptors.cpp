@@ -14,7 +14,7 @@ the terms of the BSD license (see the COPYING file).
 using namespace cv;
 using namespace std;
 
-descriptors::descriptors(const char* file_path, const char* dsc_path, FeatureType feature)
+descriptors::descriptors(const char* file_path, const char* dsc_path, FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -55,7 +55,7 @@ descriptors::descriptors(const char* file_path, const char* dsc_path, FeatureTyp
 	}
 }
 
-descriptors::descriptors(const char* dsc_path, FeatureType feature)
+descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
 	dscFilePath = dsc_path;
 	filePath = "";
@@ -158,8 +158,8 @@ descriptors::~descriptors(void)
 //
 //}
 
- int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints)
-{
+ int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints) const
+ {
 	if (isExist_CV)
 	{
 		CV_Keypoints = CV_keypoints;
@@ -172,7 +172,7 @@ descriptors::~descriptors(void)
 	}
 }
 
-int  descriptors::get_descriptors(Mat CV_Descriptors)
+int  descriptors::get_descriptors(Mat CV_Descriptors) const
 {
 	if (isExist_CV)
 	{
@@ -186,7 +186,7 @@ int  descriptors::get_descriptors(Mat CV_Descriptors)
 	}
 }
 
-unsigned int descriptors::get_num_descriptors()
+unsigned int descriptors::get_num_descriptors() const
 {
 	return numDesc;
 }

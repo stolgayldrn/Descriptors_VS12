@@ -14,66 +14,91 @@
 using namespace std;
 using namespace cv;
 
+void write_csv(vector<vector<string>> testSet)
+{
+	ofstream myfile;
+	string CSV_Path = "flicker10k.csv";
+	myfile.open(CSV_Path.c_str());
+	for (int i = 0; i < testSet.size(); i++){
+		string lineStr = "";
+		for (int ii = 0; ii < 11; ii++){
+			lineStr += testSet[i][ii] + ";";
+		}
+		lineStr += "\n";
+		myfile << lineStr;
+		
+	}
+}
+
+void release_all(string& dscPath, Image_Info* myIm, unsigned* vwI, json_t* myJSON, string& vwS, const char* ES_id)
+{
+	delete[] vwI;
+	json_decref(myJSON);
+	delete myIm;
+	dscPath = "";
+	vwS = "";
+	delete ES_id;
+}
+
 int main()
 {
 	Path *myPath = new Path;
 	ES_params *myES = new ES_params;
-
-	myPath->dscFoldName = "dsc_akaze2";
-	myPath->DataSet = "D:/Data/DataSet16035.AA.20140925";
-	myPath->imageFolderName = "";
-	myPath->subFolderingLevel = 0;
-	myPath->VocTree = "D:/Data/VT_flicker100K_AKAZE2_feats_small_tree.dat";
-
-	myES->index = "image_search_test";
-	myES->type = "akaze";
-	myES->url = "http://services.maviucak.com:9200";
-	myES->userPWD = "";
-
 	TVoctreeVLFeat* VT = new TVoctreeVLFeat;
-	initialization(VT, myPath);
-
 	vector<string> imageList;
-	get_directory_images(myPath->DataSet.c_str(), imageList);
-
-	string dscFoldPath = myPath->DataSet + "/" + myPath->dscFoldName;
-	pathControl(dscFoldPath);
 	vector<string> dscList;
-	get_directory_dsc(dscFoldPath.c_str(), dscList);
-
 	vector<vector<string>> testSet;
-
-	clock_t start;
-	start = clock();
+	string dscFoldPath;
+	clock_t start = clock();
 	double duration;
 	unsigned int err_count = 0;
+
+	myPath->dscFoldName = "images0/dsc_akaze2/0";
+	myPath->DataSet = "C:/ImageSearch/flicker10K";
+	myPath->imageFolderName = "";
+	myPath->subFolderingLevel = 2;
+	myPath->VocTree = "C:/ImageSearch/VT_Trees/VT_flicker100K_AKAZE_small_tree_S2_P.dat";
+
+	myES->index = "image_search_akaze2";
+	myES->type = "akaze";
+	myES->url = "http://172.16.10.175:9200";
+	myES->userPWD = "";
+
+	initialization(VT, myPath);
+	get_directory_images(myPath->DataSet.c_str(), imageList);
+	dscFoldPath = myPath->DataSet + "/" + myPath->dscFoldName;
+	pathControl(dscFoldPath);
+	get_directory_dsc(dscFoldPath.c_str(), dscList);
 
 	//omp_set_dynamic(0);     // Explicitly disable dynamic teams
 	omp_set_num_threads(4); // Use 4 threads for all consecutive parallel regions
 	//#pragma omp parallel for
-	for (int m = 0, n = 0; m < 100; m++)
+	for (int m = 0, n = 0; m < dscList.size(); m++)
 	{
-
-		string imagePath = myPath->DataSet + "/" + imageList[m];
-		string dscPath = dscFoldPath + "/" + imageList[m] + ".dsc";
-
+		//string imagePath = myPath->DataSet + "/" + imageList[m];
+		string imagePath = myPath->DataSet + "/" + "no_image";
+		string dscPath = dscFoldPath + "/" + dscList[m];
 		Image_Info* myIm = new Image_Info;
-		myIm->dataSet = "DataSet16035.AA.20140925";
+
+		myIm->dataSet = "flicker10K";
 		myIm->dataSubSet = "";
 		myIm->descriptorType = "akaze";
 		myIm->encoding = "jpg";
-		myIm->fileName = imageList[m];
+		myIm->fileName = dscList[m].substr(0, dscList[m].length() - 4);
 		myIm->height = 0.0;
 		myIm->width = 0.0;
 		myIm->Import = "false";
 		myIm->Query = "true";
 		myIm->path = imagePath;
-		myIm->source_type = "AA";
+		myIm->source_type = "flicker1M";
 
-		if (is_image_file(imagePath.c_str()))
+		if (is_dsc_file(dscPath.c_str()))
 		{
-			uchar_descriptors my_desc(imagePath.c_str(), dscPath.c_str(), AKAZE_FEATS);
+			/*uchar_descriptors my_desc(imagePath.c_str(), dscPath.c_str(), AKAZE_FEATS);
 			my_desc.extract_AKAZE_feats();
+*/
+			uchar_descriptors my_desc( dscPath.c_str(), AKAZE_FEATS);
+			my_desc.read_dsc();
 
 			unsigned int * vwI = new unsigned int[my_desc.get_num_descriptors()];
 			json_t* myJSON = json_object();
@@ -87,7 +112,7 @@ int main()
 					VT->quantize_multi(vwI, my_desc.get_data(), my_desc.get_num_descriptors(), 61);
 
 					for (int s = 0; s < my_desc.get_num_descriptors(); s++)
-						vwS += " " + int2string((int)vwI[s]);
+						vwS += " " + int2string(int(vwI[s]));
 
 					if (vwS != "")
 					{
@@ -102,36 +127,20 @@ int main()
 			}
 			try
 			{
-				delete[] vwI;
-				json_decref(myJSON);
-				delete myIm;
-				dscPath = "";
-				vwS = "";
-				delete ES_id;
+				release_all(dscPath, myIm, vwI, myJSON, vwS, ES_id);
 			}
 			catch (exception e)
 			{
 				printf("\nElasticSearch:::release error:%s", e.what());
 			}
 		}
-		if (m % 1 == 0)
+		if (m% 100 == 0)
 		{
-			double num = (m*100.0 / imageList.size());
-			printf("\rProcess Rate = %.2f%%", m);
+			double num = (m*100.0 / dscList.size());
+			printf("\rProcess Rate = %.2f%%", num);
 		}
 	}
-	ofstream myfile;
-	string CSV_Path = "DataSet16035.csv";
-	myfile.open(CSV_Path.c_str());
-	for (int i = 0; i < testSet.size(); i++){
-		string lineStr = "";
-		for (int ii = 0; ii < 11; ii++){
-			lineStr += testSet[i][ii] + ";";
-		}
-		lineStr += "\n";
-		myfile << lineStr;
-		
-	}
+	write_csv(testSet);
 	duration = clock() - start;
 	printf(":::Duration: %.2f, Error count: %d", duration, err_count);
 	return 0;
@@ -237,7 +246,7 @@ int mainIMP()
 			}
 			if (m % 100 == 0)
 			{
-				double num = (m*100.0 / imageList.size());
+				double num = (m*100.0 / dscList.size());
 				printf("\rProcess Rate = %.2f%%", num);
 			}
 
@@ -347,6 +356,7 @@ int mainQuerry()
 					{
 						getJSON_query_image(myJSON, vwS);
 						ES_post_query(myES, testSet, myJSON, myIm);
+
 					}
 
 					//delete[] vwC;

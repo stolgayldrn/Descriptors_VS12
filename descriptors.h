@@ -34,9 +34,9 @@ public:
 	/*int ReleaseBasePointers();
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();*/
-	int get_KeyPoint(vector<KeyPoint> CV_Keypoints);
-	int get_descriptors(Mat CV_Descriptors);
-	unsigned int get_num_descriptors();
+	int get_KeyPoint(vector<KeyPoint> CV_Keypoints) const;
+	int get_descriptors(Mat CV_Descriptors) const;
+	unsigned int get_num_descriptors() const;
 protected:
 	string header;
 	unsigned int numDesc;
@@ -57,12 +57,12 @@ protected:
 class uchar_descriptors: public descriptors
 {
 public:
-	uchar_descriptors(const char* file_path, const char* dsc_path, FeatureType feature) :descriptors(file_path, dsc_path, feature)
+	uchar_descriptors(const char* file_path, const char* dsc_path, FeatureType feature) :descriptors(file_path, dsc_path, feature), descs(nullptr)
 	{
 		header += "_uChar";
 		flags = 1;
 	};
-	uchar_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature)
+	uchar_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature), descs(nullptr)
 	{
 		flags = 1;
 	};
@@ -84,13 +84,13 @@ private:
 class float_descriptors: public descriptors
 {
 public:
-	float_descriptors(const char* file_path, const char* dsc_path, FeatureType feature) :descriptors(file_path, dsc_path, feature)
+	float_descriptors(const char* file_path, const char* dsc_path, FeatureType feature) :descriptors(file_path, dsc_path, feature), descs(nullptr)
 	{
 		header += "type2_";
 		header += "v2_";
 	};
-	float_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature)
-		{
+	float_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature), descs(nullptr)
+	{
 	}
 	~float_descriptors(void);
 	int write_dsc();

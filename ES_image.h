@@ -14,7 +14,7 @@
 using namespace std;
 
 
-typedef struct Path
+struct Path
 {
 	string DataSet;
 	string dscFoldName;
@@ -23,7 +23,7 @@ typedef struct Path
 	string VocTree;
 };
 
-typedef struct ES_params
+struct ES_params
 {
 	string index;
 	string type;
@@ -31,7 +31,7 @@ typedef struct ES_params
 	string userPWD;
 };
 
-typedef struct Image_Info
+struct Image_Info
 {
 	string dataSet; // {basefolder}/{subFolder}/{subSubFolder}
 	string dataSubSet; // {basefolder}/{subFolder}/{subSubFolder}
