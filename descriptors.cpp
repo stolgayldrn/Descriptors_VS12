@@ -14,7 +14,9 @@ the terms of the BSD license (see the COPYING file).
 using namespace cv;
 using namespace std;
 
-descriptors::descriptors(const char* file_path, const char* dsc_path, FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
+descriptors::descriptors(const char* file_path, const char* dsc_path, 
+	FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), 
+	Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -55,7 +57,8 @@ descriptors::descriptors(const char* file_path, const char* dsc_path, FeatureTyp
 	}
 }
 
-descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
+descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
+Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
 	dscFilePath = dsc_path;
 	filePath = "";
@@ -165,12 +168,9 @@ descriptors::~descriptors(void)
 		CV_Keypoints = CV_keypoints;
 		return 1;
 	}
-	else
-	{
-		printf("\nIt is not a CV type descriptor.");
-		return 0;
-	}
-}
+	 printf("\nIt is not a CV type descriptor.");
+	 return 0;
+ }
 
 int  descriptors::get_descriptors(Mat CV_Descriptors) const
 {
@@ -179,11 +179,8 @@ int  descriptors::get_descriptors(Mat CV_Descriptors) const
 		CV_Descriptors = CV_descriptors;
 		return 1;
 	}
-	else
-	{
-		printf("\nIt is not a CV type descriptor.");
-		return 0;
-	}
+	printf("\nIt is not a CV type descriptor.");
+	return 0;
 }
 
 unsigned int descriptors::get_num_descriptors() const
@@ -302,6 +299,8 @@ int uchar_descriptors::read_dsc_v1()
 	if (f)
 	{
 		unsigned long long hash;
+		char *cstr = new char[100];
+		fread(cstr, sizeof(string), 1, f);
 		fread(&numDesc, sizeof(unsigned int), 1, f);
 		descs = new unsigned char[(numDesc+4)*featSize];
 		fread(descs, sizeof(unsigned char), (numDesc)*featSize, f);
@@ -320,13 +319,14 @@ int uchar_descriptors::read_dsc_v1()
 			fread(Angles, sizeof(float), numDesc, f);
 		}
 		fclose(f);
+		delete[] cstr;
 	}
 	else
 	{
-		printf("Cannot read file: %s\n", dscFilePath);
+		printf("Cannot read file: %s\n", dscFilePath.c_str());
 		return 0;
 	}
-
+	isRead = true;
 	return 0;
 }
 
@@ -375,10 +375,10 @@ int uchar_descriptors::extract_AKAZE_feats()
 				Angles[k] = key.angle;
 				for(int j = 0; j < featSize; ++j)
 				{
-					int intdesc = (int)(CV_descriptors.data[j+(k*featSize)]);
+					int intdesc = int(CV_descriptors.data[j+(k*featSize)]);
 					if( intdesc > 255 )
 						intdesc = 255;
-					*d=(unsigned char)intdesc;
+					*d=unsigned char(intdesc);
 					d++;
 				}
 			}
@@ -395,7 +395,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 	}
 	else
 	{
-		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath);
+		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
 		
 		delete Image;
 		return 0;
@@ -450,14 +450,14 @@ int uchar_descriptors::extract_EZ_SIFT()
 			Ap++;
 		}
 	}
-	printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath, numDesc);
+	printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
 
 	isExist_EZSIFT = true;
 	delete Image;
 	return 1;
 }
 
-unsigned char* uchar_descriptors::get_data()
+unsigned char* uchar_descriptors::get_data() const
 {
 	return descs;
 }
@@ -541,7 +541,7 @@ float_descriptors::~float_descriptors(void)
 	
 }
 
-int float_descriptors::write_dsc()
+int float_descriptors::write_dsc() const
 {
 	if (dscFilePath=="")
 	{
@@ -551,7 +551,7 @@ int float_descriptors::write_dsc()
 	try
 	{
 		unsigned long long hash = dsc_magic;
-		FILE* f= new FILE();
+		struct _iobuf* f = new FILE();
 		fopen_s(&f, dscFilePath.c_str(), "wb");
 		fwrite(&header, sizeof(string), 1, f);
 		fwrite(&numDesc, sizeof(unsigned int), 1, f);
@@ -571,14 +571,15 @@ int float_descriptors::write_dsc()
 	}
 }
 
-int float_descriptors::read_dsc()
+int float_descriptors::read_dsc_v1()
 {
-	FILE *f;
+	struct _iobuf*f;
 	fopen_s(&f,dscFilePath.c_str(), "rb");
 	if (f)
 	{
 		unsigned long long hash;
-		fread(&header, sizeof(string), 1, f);
+		char *cstr = new char[100];
+		fread(cstr, sizeof(string), 1, f);
 		fread(&numDesc, sizeof(unsigned int), 1, f);
 		descs = new float[(numDesc+4)*featSize];
 		fread(descs, sizeof(float), (numDesc)*featSize, f);
@@ -597,13 +598,12 @@ int float_descriptors::read_dsc()
 			fread(Angles, sizeof(float), numDesc, f);
 		}
 		fclose(f);
+		delete[] cstr;
+		isRead = true;
 		return 1;
 	}
-	else
-	{
-		printf("Cannot read file: %s\n", dscFilePath);
-		return 0;
-	}
+	printf("Cannot read file: %s\n", dscFilePath.c_str());
+	return 0;
 }
 
 int float_descriptors::extract_EZ_SIFT()
@@ -698,8 +698,13 @@ int float_descriptors::extract_EZ_ROOT_SIFT()
 	Image->deallocate();
 	delete numKpts;
 	delete Image;
-	printf("\nFeature extracted:  File: - %s... Num Features: %d...", filePath, numDesc);
+	printf("\nFeature extracted:  File: - %s... Num Features: %d...", filePath.c_str(), numDesc);
 	return 1;
+}
+
+float* float_descriptors::get_data() const
+{
+	return descs;
 }
 
 int float_descriptors::ReleaseBasePointers()
@@ -710,13 +715,22 @@ int float_descriptors::ReleaseBasePointers()
 		delete[] Ys;
 		delete[] Sizes;
 		delete[] Angles;
-		delete[] descs;
 		numDesc = 0;
 		return 1;
 	}
 	else
 		return 0;
 
+}
+int float_descriptors::ReleaseData()
+{
+	if (isExist_CV || isExist_EZSIFT || isRead)
+	{
+		delete[] descs;
+		isRead = false;
+		return 1;
+	}
+	return 0;
 }
 
 int float_descriptors::ReleseEZSIFT()

@@ -50,5 +50,5 @@ int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string word
 int ES_commit(ES_params* my_ES, json_t* my_source, const char * ES_id, string fileName);
 int getJSON_query_image(json_t* my_source, string words_str);
 int ES_post_query(ES_params* my_ES, vector<vector<string>>& ES_results, json_t* my_source, Image_Info* my_II);
-int initialization(TVoctreeVLFeat* VT, Path* p);
+int VocTreeInit(TVoctreeVLFeat* VT, Path* p);
 #endif

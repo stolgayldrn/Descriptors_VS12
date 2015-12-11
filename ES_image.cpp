@@ -217,7 +217,7 @@ int ES_post_query(ES_params* my_ES, vector<vector<string>>& ES_results, json_t* 
 	}
 }
 
-int initialization(TVoctreeVLFeat* VT, Path* p)
+int VocTreeInit(TVoctreeVLFeat* VT, Path* p)
 {
 	try{
 		VT->init_read(p->VocTree.c_str());

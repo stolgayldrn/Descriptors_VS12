@@ -72,7 +72,7 @@ public:
 	int read_dsc_v1();
 	int extract_AKAZE_feats();
 	int extract_EZ_SIFT();
-	unsigned char* get_data();
+	unsigned char* get_data() const;
 	int ReleaseBasePointers();
 	int ReleaseData();
 	int ReleseEZSIFT();
@@ -93,13 +93,15 @@ public:
 	{
 	}
 	~float_descriptors(void);
-	int write_dsc();
-	int read_dsc();
+	int write_dsc() const;
+	int read_dsc_v1();
 	int extract_EZ_SIFT();
 	int extract_EZ_ROOT_SIFT();
 	int ReleaseBasePointers();
+	int ReleaseData();
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();
+	float* get_data() const;
 private:
 	float* descs;
 };
