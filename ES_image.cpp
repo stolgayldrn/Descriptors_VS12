@@ -30,6 +30,34 @@ int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string word
 	return 1;
 }
 
+int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string words_str, string low_words_str)
+{
+	try{
+		json_object_set_new(my_source, "data_set", json_string(my_II->dataSet.c_str()));
+		json_object_set_new(my_source, "data_sub_set", json_string(my_II->dataSubSet.c_str()));
+		json_object_set_new(my_source, "url", json_string(my_II->url.c_str()));
+		json_object_set_new(my_source, "file_name", json_string(my_II->fileName.c_str()));
+		json_object_set_new(my_source, "descriptor_type", json_string(my_II->descriptorType.c_str()));
+		json_object_set_new(my_source, "source_type", json_string(my_II->source_type.c_str()));
+		json_object_set_new(my_source, "encoding", json_string(my_II->encoding.c_str()));
+		json_object_set_new(my_source, "height", json_string(int2string(my_II->height).c_str()));
+		json_object_set_new(my_source, "width", json_string(int2string(my_II->width).c_str()));
+		json_object_set_new(my_source, "disk_path", json_string(my_II->path.c_str()));
+		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
+		json_object_set_new(my_source, "low_words_string", json_string(low_words_str.c_str()));
+	}
+	catch (exception e){
+		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+		cout << "# ERR: " << e.what();
+	}
+	if (!json_is_object(my_source)){
+		fprintf(stderr, "error: commits is not an array\n");
+		return 0;
+	}
+	return 1;
+}
+
 int ES_commit(ES_params* my_ES, json_t* my_source, const char * ES_id, string fileName)
 {
 	CURL *curl = curl_easy_init();
@@ -111,6 +139,25 @@ int getJSON_query_image(json_t* my_source, string words_str)
 	json_t *match = json_object();
 	try	{
 		json_object_set_new(match, "words_string", json_string(words_str.c_str()));
+		json_object_set_new(query, "match", match);
+		json_object_set_new(my_source, "query", query);
+		return 1;
+	}
+	catch (exception e){
+		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+		cout << "# ERR: " << e.what();
+		cout << ", ES State: " << e.what() << " )" << endl;
+		return 0;
+	}
+}
+
+int getJSON_query_low_image(json_t* my_source, string words_str)
+{
+	json_t *query = json_object();
+	json_t *match = json_object();
+	try	{
+		json_object_set_new(match, "low_words_string", json_string(words_str.c_str()));
 		json_object_set_new(query, "match", match);
 		json_object_set_new(my_source, "query", query);
 		return 1;

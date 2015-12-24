@@ -57,6 +57,50 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 	}
 }
 
+descriptors::descriptors(const char* file_path, const char* dsc_path, const char* dscOct40_path,
+	FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
+	Angles(nullptr), EZ_keypoints(nullptr), flags(0)
+{
+	filePath = file_path;
+	dscFilePath = dsc_path;
+	dscLowPath = dscOct40_path;
+	featType = feature;
+	numDesc = 0;
+	isExist_CV = false;
+	isExist_EZSIFT = false;
+	isRead = false;
+	switch (featType)
+	{
+	case AKAZE_FEATS:
+		featSize = 61;
+		header = "AKAZE";
+		break;
+	case EZ_SIFT:
+		featSize = 128;
+		header = "EZ_SIFT_";
+		break;
+	case EZ_ROOT_SIFT:
+		featSize = 128;
+		header = "EZ_ROOT_SIFT_";
+		break;
+	case OPENCV_SIFT:
+		featSize = 128;
+		header = "OPENCV_SIFT_";
+		break;
+	case HESSIAN_SIFT:
+		featSize = 128;
+		header = "HESSIAN_SIFT_";
+		break;
+	case VL_SIFT:
+		featSize = 128;
+		header = "VL_SIFT_";
+		break;
+	default:
+		featSize = 128;
+		break;
+	}
+}
+
 descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
 Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
@@ -245,6 +289,42 @@ int uchar_descriptors::write_dsc()
 	}
 }
 
+int uchar_descriptors::write_low_dsc()
+{
+	if (dscLowPath == "")
+	{
+		printf("\nPath must not null.");
+		return 0;
+	}
+	try
+	{
+		unsigned long long hash = dsc_magic;
+		FILE* f = new FILE();
+		fopen_s(&f, dscLowPath.c_str(), "wb");
+		fwrite(&numDesc, sizeof(unsigned int), 1, f);
+		fwrite(descs, sizeof(unsigned char), numDesc*featSize, f);
+		fwrite(&hash, sizeof(unsigned long long), 1, f);
+		fwrite(Xs, sizeof(float), numDesc, f);
+		fwrite(Ys, sizeof(float), numDesc, f);
+		fwrite(Sizes, sizeof(float), numDesc, f);
+		fwrite(Angles, sizeof(float), numDesc, f);
+		header += "_low_v3";
+		unsigned int headerSize = header.size();
+		char *cstr = new char[headerSize + 1];
+		strcpy(cstr, header.c_str());
+		fwrite(&headerSize, sizeof(unsigned int), 1, f);
+		fwrite(cstr, headerSize*sizeof(char*), 1, f);
+		fclose(f);
+		delete[] cstr;
+		return 1;
+	}
+	catch (Exception e)
+	{
+		printf("\nWrite dsc file error: ", e.msg.c_str());
+		return 0;
+	}
+}
+
 int uchar_descriptors::read_dsc()
 {
 	FILE *f;
@@ -397,6 +477,85 @@ int uchar_descriptors::extract_AKAZE_feats()
 	{
 		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
 		
+		delete Image;
+		return 0;
+	}
+
+	Image->empty();
+	Image->release();
+	Image->deallocate();
+	isExist_CV = true;
+	delete Image;
+	return 1;
+}
+
+int uchar_descriptors::extract_AKAZE_low_feats()
+{
+	//CV_descriptors = new Mat();
+	featSize = 61;
+	Mat *Image = new Mat();
+	string myFilePath = filePath;
+	try
+	{
+		*Image = imread(myFilePath, IMREAD_GRAYSCALE);
+	}
+	catch (exception e)
+	{
+		printf("\nExtract AKAZE:::imread error:%s", e.what());
+	}
+
+	if (Image->cols >= featSize && Image->rows >= featSize)
+	{
+		Ptr<AKAZE> akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.008, 40, 4);
+		try
+		{
+			akaze->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
+		}
+		catch (exception e)
+		{
+			printf("\nExtract AKAZE:::detect and compute error:%s", e.what());
+		}
+
+		numDesc = CV_descriptors.rows;
+		if (numDesc)
+		{
+			descs = new unsigned char[(numDesc + 4)*featSize];
+			Xs = new float[(numDesc + 4)];
+			Ys = new float[(numDesc + 4)];
+			Sizes = new float[(numDesc + 4)];
+			Angles = new float[(numDesc + 4)];
+			unsigned char *d = descs;
+			for (unsigned int k = 0; k<numDesc; k++)
+			{
+				KeyPoint key = CV_keypoints[k];
+				Xs[k] = key.pt.x;
+				Ys[k] = key.pt.y;
+				Sizes[k] = key.size;
+				Angles[k] = key.angle;
+				for (int j = 0; j < featSize; ++j)
+				{
+					int intdesc = int(CV_descriptors.data[j + (k*featSize)]);
+					if (intdesc > 255)
+						intdesc = 255;
+					*d = unsigned char(intdesc);
+					d++;
+				}
+			}
+			printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
+		}
+		else
+		{
+			printf("\nError at extract_AKAZE_feats:::: Unable to extract descriptors in frame %s.", filePath.c_str());
+
+			delete Image;
+			return 0;
+		}
+		akaze->clear();
+	}
+	else
+	{
+		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
+
 		delete Image;
 		return 0;
 	}

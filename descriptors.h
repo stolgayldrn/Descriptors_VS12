@@ -29,6 +29,7 @@ class descriptors
 {
 public:
 	descriptors(const char* file_path, const char* dsc_path, FeatureType feature);
+	descriptors(const char* file_path, const char* dsc_path, const char* dsc_low_path, FeatureType feature);
 	descriptors(const char* dsc_path, FeatureType feature);
 	~descriptors(void);
 	/*int ReleaseBasePointers();
@@ -42,6 +43,7 @@ protected:
 	unsigned int numDesc;
 	string filePath;
 	string dscFilePath;
+	string dscLowPath;
 	int featSize;
 	FeatureType featType;
 	float *Xs, *Ys, *Sizes, *Angles;
@@ -62,15 +64,22 @@ public:
 		header += "_uChar";
 		flags = 1;
 	};
+	uchar_descriptors(const char* file_path, const char* dsc_path, const char* dscLow_path, FeatureType feature) :descriptors(file_path, dsc_path, feature), descs(nullptr)
+	{
+		header += "_uChar";
+		flags = 1;
+	};
 	uchar_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature), descs(nullptr)
 	{
 		flags = 1;
 	};
 	~uchar_descriptors(void);
 	int write_dsc();		// arranged to v2
+	int write_low_dsc();
 	int read_dsc();			// arranged to v2
 	int read_dsc_v1();
 	int extract_AKAZE_feats();
+	int extract_AKAZE_low_feats();
 	int extract_EZ_SIFT();
 	unsigned char* get_data() const;
 	int ReleaseBasePointers();
