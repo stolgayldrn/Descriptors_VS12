@@ -57,49 +57,6 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 	}
 }
 
-descriptors::descriptors(const char* file_path, const char* dsc_path, const char* dscOct40_path,
-	FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
-	Angles(nullptr), EZ_keypoints(nullptr), flags(0)
-{
-	filePath = file_path;
-	dscFilePath = dsc_path;
-	dscLowPath = dscOct40_path;
-	featType = feature;
-	numDesc = 0;
-	isExist_CV = false;
-	isExist_EZSIFT = false;
-	isRead = false;
-	switch (featType)
-	{
-	case AKAZE_FEATS:
-		featSize = 61;
-		header = "AKAZE";
-		break;
-	case EZ_SIFT:
-		featSize = 128;
-		header = "EZ_SIFT_";
-		break;
-	case EZ_ROOT_SIFT:
-		featSize = 128;
-		header = "EZ_ROOT_SIFT_";
-		break;
-	case OPENCV_SIFT:
-		featSize = 128;
-		header = "OPENCV_SIFT_";
-		break;
-	case HESSIAN_SIFT:
-		featSize = 128;
-		header = "HESSIAN_SIFT_";
-		break;
-	case VL_SIFT:
-		featSize = 128;
-		header = "VL_SIFT_";
-		break;
-	default:
-		featSize = 128;
-		break;
-	}
-}
 
 descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
 Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
@@ -205,7 +162,7 @@ descriptors::~descriptors(void)
 //
 //}
 
- int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints) const
+ int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints) 
  {
 	if (isExist_CV)
 	{
@@ -216,7 +173,7 @@ descriptors::~descriptors(void)
 	 return 0;
  }
 
-int  descriptors::get_descriptors(Mat CV_Descriptors) const
+int  descriptors::get_descriptors(Mat CV_Descriptors) 
 {
 	if (isExist_CV)
 	{
@@ -291,7 +248,7 @@ int uchar_descriptors::write_dsc()
 
 int uchar_descriptors::write_low_dsc()
 {
-	if (dscLowPath == "")
+	if (dscFilePath == "")
 	{
 		printf("\nPath must not null.");
 		return 0;
@@ -300,14 +257,22 @@ int uchar_descriptors::write_low_dsc()
 	{
 		unsigned long long hash = dsc_magic;
 		FILE* f = new FILE();
-		fopen_s(&f, dscLowPath.c_str(), "wb");
-		fwrite(&numDesc, sizeof(unsigned int), 1, f);
-		fwrite(descs, sizeof(unsigned char), numDesc*featSize, f);
-		fwrite(&hash, sizeof(unsigned long long), 1, f);
-		fwrite(Xs, sizeof(float), numDesc, f);
-		fwrite(Ys, sizeof(float), numDesc, f);
-		fwrite(Sizes, sizeof(float), numDesc, f);
-		fwrite(Angles, sizeof(float), numDesc, f);
+		fopen_s(&f, dscFilePath.c_str(), "wb");
+		if (numDesc > 0)
+		{
+			fwrite(&numDesc, sizeof(unsigned int), 1, f);
+			fwrite(descs, sizeof(unsigned char), numDesc*featSize, f);
+			fwrite(&hash, sizeof(unsigned long long), 1, f);
+			fwrite(Xs, sizeof(float), numDesc, f);
+			fwrite(Ys, sizeof(float), numDesc, f);
+			fwrite(Sizes, sizeof(float), numDesc, f);
+			fwrite(Angles, sizeof(float), numDesc, f);
+		}
+		else
+		{
+			int num = 0;
+			fwrite(&num, sizeof(unsigned int), 1, f);
+		}
 		header += "_low_v3";
 		unsigned int headerSize = header.size();
 		char *cstr = new char[headerSize + 1];
@@ -410,6 +375,19 @@ int uchar_descriptors::read_dsc_v1()
 	return 0;
 }
 
+void uchar_descriptors::recursive_extract_akaze(Mat* Image, int rec, float threshold)
+{
+	CV_keypoints.clear();
+	CV_descriptors.release();
+	threshold /= 10;
+	Ptr<AKAZE> akazeRec = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
+	akazeRec->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
+	numDesc = CV_descriptors.rows;
+	rec++;
+	if ((numDesc < 10) && (rec < 10))
+		recursive_extract_akaze(Image, rec, threshold);
+}
+
 int uchar_descriptors::extract_AKAZE_feats()
 {
 	//CV_descriptors = new Mat();
@@ -438,6 +416,12 @@ int uchar_descriptors::extract_AKAZE_feats()
 		}
 
 		numDesc = CV_descriptors.rows;
+		int rec = 1;
+		float threshold = 0.001;
+		if (numDesc < 10)
+		{
+			recursive_extract_akaze(Image, rec, threshold);
+		}
 		if (numDesc)
 		{
 			descs = new unsigned char[(numDesc + 4)*featSize];
@@ -517,13 +501,19 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 		}
 
 		numDesc = CV_descriptors.rows;
+		int rec = 1;
+		float threshold = 0.008;
+		if (numDesc < 10)
+		{
+			recursive_extract_akaze(Image, rec, threshold);
+		}
 		if (numDesc)
 		{
-			descs = new unsigned char[(numDesc + 4)*featSize];
-			Xs = new float[(numDesc + 4)];
-			Ys = new float[(numDesc + 4)];
-			Sizes = new float[(numDesc + 4)];
-			Angles = new float[(numDesc + 4)];
+			descs = new unsigned char[(numDesc )*featSize];
+			Xs = new float[(numDesc )];
+			Ys = new float[(numDesc )];
+			Sizes = new float[(numDesc )];
+			Angles = new float[(numDesc )];
 			unsigned char *d = descs;
 			for (unsigned int k = 0; k<numDesc; k++)
 			{
@@ -649,7 +639,6 @@ int uchar_descriptors::ReleaseData()
 		return 0;
 
 }
-
 
 int uchar_descriptors::ReleseEZSIFT()
 {

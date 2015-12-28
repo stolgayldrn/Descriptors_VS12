@@ -29,21 +29,19 @@ class descriptors
 {
 public:
 	descriptors(const char* file_path, const char* dsc_path, FeatureType feature);
-	descriptors(const char* file_path, const char* dsc_path, const char* dsc_low_path, FeatureType feature);
 	descriptors(const char* dsc_path, FeatureType feature);
 	~descriptors(void);
 	/*int ReleaseBasePointers();
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();*/
-	int get_KeyPoint(vector<KeyPoint> CV_Keypoints) const;
-	int get_descriptors(Mat CV_Descriptors) const;
+	int get_KeyPoint(vector<KeyPoint> CV_Keypoints) ;
+	int get_descriptors(Mat CV_Descriptors) ;
 	unsigned int get_num_descriptors() const;
 protected:
 	string header;
 	unsigned int numDesc;
 	string filePath;
 	string dscFilePath;
-	string dscLowPath;
 	int featSize;
 	FeatureType featType;
 	float *Xs, *Ys, *Sizes, *Angles;
@@ -64,11 +62,7 @@ public:
 		header += "_uChar";
 		flags = 1;
 	};
-	uchar_descriptors(const char* file_path, const char* dsc_path, const char* dscLow_path, FeatureType feature) :descriptors(file_path, dsc_path, feature), descs(nullptr)
-	{
-		header += "_uChar";
-		flags = 1;
-	};
+	
 	uchar_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature), descs(nullptr)
 	{
 		flags = 1;
@@ -78,6 +72,7 @@ public:
 	int write_low_dsc();
 	int read_dsc();			// arranged to v2
 	int read_dsc_v1();
+	void recursive_extract_akaze(Mat* Image, int rec, float threshold);
 	int extract_AKAZE_feats();
 	int extract_AKAZE_low_feats();
 	int extract_EZ_SIFT();
