@@ -57,7 +57,6 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 	}
 }
 
-
 descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
 Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
 {
@@ -383,6 +382,8 @@ void uchar_descriptors::recursive_extract_akaze(Mat* Image, int rec, float thres
 	Ptr<AKAZE> akazeRec = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
 	akazeRec->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
+	akazeRec->clear();
+	akazeRec.release();
 	rec++;
 	if ((numDesc < 10) && (rec < 10))
 		recursive_extract_akaze(Image, rec, threshold);
@@ -446,7 +447,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 					d++;
 				}
 			}
-			printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
+			//printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
 		}
 		else
 		{
@@ -456,6 +457,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 			return 0;
 		}
 		akaze->clear();
+		akaze.release();
 	}
 	else
 	{
@@ -531,7 +533,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 					d++;
 				}
 			}
-			printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
+			//printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
 		}
 		else
 		{
@@ -659,8 +661,8 @@ int uchar_descriptors::ReleaseCV_Feats()
 	if (isExist_CV)
 	{
 		CV_keypoints.clear();
-		CV_keypoints.shrink_to_fit();
 		CV_descriptors.release();
+		CV_keypoints.shrink_to_fit();
 		//delete CV_descriptors;
 		isExist_CV = false;
 		return 1;

@@ -30,7 +30,7 @@ int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string word
 	return 1;
 }
 
-int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string words_str, string low_words_str)
+int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string words_str, string words_str_low)
 {
 	try{
 		json_object_set_new(my_source, "data_set", json_string(my_II->dataSet.c_str()));
@@ -44,7 +44,7 @@ int getJSON_new_image(Image_Info* my_II, Path* p, json_t* my_source, string word
 		json_object_set_new(my_source, "width", json_string(int2string(my_II->width).c_str()));
 		json_object_set_new(my_source, "disk_path", json_string(my_II->path.c_str()));
 		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
-		json_object_set_new(my_source, "low_words_string", json_string(low_words_str.c_str()));
+		json_object_set_new(my_source, "words_string_low", json_string(words_str_low.c_str()));
 	}
 	catch (exception e){
 		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
@@ -274,4 +274,26 @@ int VocTreeInit(TVoctreeVLFeat* VT, Path* p)
 		printf("\nInitialization error: ", e.what());
 		return 0;
 	}
+}
+
+int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path* p)
+{
+	try{
+		VT->init_read(p->VocTree.c_str());
+		
+	}
+	catch (exception e){
+		printf("\nInitialization error: ", e.what());
+		return 0;
+	}
+
+	try{
+		VT_low->init_read(p->VocTreeLow.c_str());
+		
+	}
+	catch (exception e){
+		printf("\nInitialization error: ", e.what());
+		return 0;
+	}
+	return 1;
 }
