@@ -5,9 +5,6 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/opencv.hpp>
 
-//#include <opencv2/features2d.hpp>
-//#include <opencv2/imgcodecs.hpp>
-//#include <opencv2/opencv.hpp>
 #include <string.h>
 #include <vector>
 #include <sstream>
@@ -15,8 +12,7 @@
 #include <fstream>
 #include "siftfast.h"
 #include "dirent.h"
-
-//#include <vld.h>
+#include "vld.h"
 
 #define dsc_magic 111222333444
 

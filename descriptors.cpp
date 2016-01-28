@@ -10,7 +10,6 @@ the terms of the BSD license (see the COPYING file).
 /* 09/10/2015															*/
 /************************************************************************/
 #include "descriptors.h"
-
 using namespace cv;
 using namespace std;
 
@@ -601,7 +600,7 @@ int uchar_descriptors::extract_EZ_SIFT()
 			Ap++;
 		}
 	}
-	printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
+	//printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
 
 	isExist_EZSIFT = true;
 	delete Image;
@@ -661,8 +660,11 @@ int uchar_descriptors::ReleaseCV_Feats()
 	if (isExist_CV)
 	{
 		CV_keypoints.clear();
-		CV_descriptors.release();
 		CV_keypoints.shrink_to_fit();
+
+		CV_descriptors.release();
+		CV_descriptors.deallocate();
+		CV_descriptors.~Mat();
 		//delete CV_descriptors;
 		isExist_CV = false;
 		return 1;
