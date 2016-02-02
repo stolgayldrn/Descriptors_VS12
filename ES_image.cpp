@@ -277,9 +277,10 @@ int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* m
 	}
 }
 
-int ES_post_query(ES_params my_ES, vector<string>& ES_results, json_t* my_source, Image_Info my_II)
+int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, 
+	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<string> & scoresV)
 {
-	ES_results.push_back(my_II.fileName.c_str());
+	fileNamesV.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
 	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + "_search";
@@ -329,7 +330,11 @@ int ES_post_query(ES_params my_ES, vector<string>& ES_results, json_t* my_source
 			if (!rootRes){
 				fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
 				for (int n = 0; n < 10; n++)
-					ES_results.push_back("-1");
+				{
+					fileNamesV.push_back("-1");
+					dscPathsV.push_back("-1");
+					scoresV.push_back("-1");
+				}
 				return 0;
 			}
 			hits = json_object_get(rootRes, "hits");
@@ -337,31 +342,46 @@ int ES_post_query(ES_params my_ES, vector<string>& ES_results, json_t* my_source
 			if (!json_is_array(hits2)){
 				fprintf(stderr, "error: hits2 is not an array\n");
 				for (int n = 0; n < 10; n++)
-					ES_results.push_back("-1");
+				{
+					fileNamesV.push_back("-1");
+					dscPathsV.push_back("-1");
+					scoresV.push_back("-1");
+				}
 				return 0;
 			}
 			else{
 				for (int i = 0; i < 10; i++){
 					if (i < json_array_size(hits2)){
-						json_t *data, *sourceRes, *image_ID;
+						json_t *data, *sourceRes, *image_ID, *dscPathJSON;
 						data = json_array_get(hits2, i);
-						const char *message_text;
+						const char *fileNameStr, *dscPathStr;
 						if (!json_is_object(data)){
 							fprintf(stderr, "error: commit data %d is not an object\n", i + 1);
 							return 1;
 						}
-						sourceRes = json_object_get(data, "_source");
-						image_ID = json_object_get(sourceRes, "file_name");
-						message_text = json_string_value(image_ID);
-						ES_results.push_back(message_text);
+						sourceRes	= json_object_get(data, "_source");
+						image_ID	= json_object_get(sourceRes, "file_name");
+						fileNameStr = json_string_value(image_ID);
+						fileNamesV.push_back(fileNameStr);
+
+						dscPathJSON	= json_object_get(sourceRes, "disk_path");
+						dscPathStr	= json_string_value(dscPathJSON);
+						dscPathsV.push_back(dscPathStr);
 						//releases
 						json_object_clear(sourceRes);
+						json_object_clear(dscPathJSON);
 						json_object_clear(data);
 						json_object_clear(image_ID);
+						delete fileNameStr;
+						delete dscPathStr;
 					}
 					else{
 						for (int n = 0; n < 10; n++)
-							ES_results.push_back("-100");
+						{
+							fileNamesV.push_back("100");
+							dscPathsV.push_back("100");
+							scoresV.push_back("100");
+						}
 					}
 				}
 				//releases	
