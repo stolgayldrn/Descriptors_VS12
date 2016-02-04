@@ -55,7 +55,7 @@ int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fil
 int getJSON_query_image(json_t* my_source, string words_str, string wordsType);
 int getJSON_query_low_image(json_t* my_source, string words_str);
 int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* my_source, Image_Info my_II);
-int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, vector<string>& fileNamesV, vector<string>& dscPathsV, vector<string> & scoresV);
+int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, vector<string>& fileNamesV, vector<string>& dscPathsV, vector<float> & scoresV);
 int VocTreeInit(TVoctreeVLFeat* VT, Path p);
 int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p);
 #endif

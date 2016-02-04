@@ -31,8 +31,9 @@ public:
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();*/
 	int get_KeyPoint(vector<KeyPoint> CV_Keypoints) ;
-	int get_descriptors(Mat CV_Descriptors) ;
+	int get_descriptors(Mat &CV_Descriptors) ;
 	unsigned int get_num_descriptors() const;
+	vector<Point2f> getCoords();
 protected:
 	string header;
 	unsigned int numDesc;

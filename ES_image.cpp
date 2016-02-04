@@ -278,7 +278,7 @@ int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* m
 }
 
 int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, 
-	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<string> & scoresV)
+	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<float> & scoresV)
 {
 	fileNamesV.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
@@ -333,7 +333,7 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 				{
 					fileNamesV.push_back("-1");
 					dscPathsV.push_back("-1");
-					scoresV.push_back("-1");
+					scoresV.push_back(-1);
 				}
 				return 0;
 			}
@@ -345,7 +345,7 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 				{
 					fileNamesV.push_back("-1");
 					dscPathsV.push_back("-1");
-					scoresV.push_back("-1");
+					scoresV.push_back(-1);
 				}
 				return 0;
 			}
@@ -372,15 +372,15 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 						json_object_clear(dscPathJSON);
 						json_object_clear(data);
 						json_object_clear(image_ID);
-						delete fileNameStr;
-						delete dscPathStr;
+						//delete fileNameStr;
+						//delete dscPathStr;
 					}
 					else{
 						for (int n = 0; n < 10; n++)
 						{
 							fileNamesV.push_back("100");
 							dscPathsV.push_back("100");
-							scoresV.push_back("100");
+							scoresV.push_back(100);
 						}
 					}
 				}

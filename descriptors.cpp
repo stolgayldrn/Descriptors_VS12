@@ -162,7 +162,7 @@ descriptors::~descriptors(void)
 
  int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints) 
  {
-	if (isExist_CV)
+	if (isExist_CV||isRead)
 	{
 		CV_Keypoints = CV_keypoints;
 		return 1;
@@ -171,9 +171,9 @@ descriptors::~descriptors(void)
 	 return 0;
  }
 
-int  descriptors::get_descriptors(Mat CV_Descriptors) 
+int  descriptors::get_descriptors(Mat &CV_Descriptors) 
 {
-	if (isExist_CV)
+	if (isExist_CV||isRead)
 	{
 		CV_Descriptors = CV_descriptors;
 		return 1;
@@ -185,6 +185,14 @@ int  descriptors::get_descriptors(Mat CV_Descriptors)
 unsigned int descriptors::get_num_descriptors() const
 {
 	return numDesc;
+}
+ 
+vector<Point2f> descriptors::getCoords()
+{
+	vector<Point2f> coords;
+	for (unsigned int i = 0; i < numDesc; i++)
+		coords.push_back(Point2f(Xs[i], Ys[i]));
+	return coords;
 }
 
 
