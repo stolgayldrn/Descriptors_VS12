@@ -367,6 +367,8 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 						dscPathJSON	= json_object_get(sourceRes, "disk_path");
 						dscPathStr	= json_string_value(dscPathJSON);
 						dscPathsV.push_back(dscPathStr);
+
+						scoresV.push_back(1.00);
 						//releases
 						json_object_clear(sourceRes);
 						json_object_clear(dscPathJSON);

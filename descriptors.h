@@ -31,9 +31,12 @@ public:
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();*/
 	int get_KeyPoint(vector<KeyPoint> CV_Keypoints) ;
-	int get_descriptors(Mat &CV_Descriptors) ;
+	int get_descriptors(Mat &CV_Descriptors);
 	unsigned int get_num_descriptors() const;
+	vector<float> getCoordsX();
+	vector<float> getCoordsY();
 	vector<Point2f> getCoords();
+	int getFeatureSize();
 protected:
 	string header;
 	unsigned int numDesc;
@@ -74,6 +77,7 @@ public:
 	int extract_AKAZE_low_feats();
 	int extract_EZ_SIFT();
 	unsigned char* get_data() const;
+	int  getDataAsMat__ReadMode(Mat &CV_Descriptors);
 	int ReleaseBasePointers();
 	int ReleaseData();
 	int ReleseEZSIFT();

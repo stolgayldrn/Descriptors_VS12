@@ -173,7 +173,7 @@ descriptors::~descriptors(void)
 
 int  descriptors::get_descriptors(Mat &CV_Descriptors) 
 {
-	if (isExist_CV||isRead)
+	if (isExist_CV)
 	{
 		CV_Descriptors = CV_descriptors;
 		return 1;
@@ -187,6 +187,23 @@ unsigned int descriptors::get_num_descriptors() const
 	return numDesc;
 }
  
+vector<float> descriptors::getCoordsX()
+{
+	vector<float> coords;
+	for (unsigned int i = 0; i < numDesc; i++)
+		coords.push_back(Xs[i]);
+	return coords;
+}
+
+vector<float> descriptors::getCoordsY()
+{
+	vector<float> coords;
+	for (unsigned int i = 0; i < numDesc; i++)
+		coords.push_back(Ys[i]);
+	return coords;
+}
+
+
 vector<Point2f> descriptors::getCoords()
 {
 	vector<Point2f> coords;
@@ -195,8 +212,10 @@ vector<Point2f> descriptors::getCoords()
 	return coords;
 }
 
-
-
+int descriptors::getFeatureSize()
+{
+	return featSize;
+}
 /************************************************************************/
 /* unsigned char type descriptor class									*/
 /************************************************************************/
@@ -212,8 +231,7 @@ uchar_descriptors::~uchar_descriptors(void)
 	catch (Exception e)
 	{
 		printf("\ntype1_descriptors: destructor error.");
-	}
-	
+	}	
 }
 
 int uchar_descriptors::write_dsc()
@@ -236,7 +254,7 @@ int uchar_descriptors::write_dsc()
 		fwrite(Sizes, sizeof(float), numDesc, f);
 		fwrite(Angles, sizeof(float), numDesc, f);
 		header += "_v3";
-		unsigned int headerSize = header.size();
+		size_t headerSize = header.size();
 		char *cstr = new char[headerSize + 1];
 		strcpy(cstr, header.c_str());
 		fwrite(&headerSize, sizeof(unsigned int),1,f);
@@ -280,7 +298,7 @@ int uchar_descriptors::write_low_dsc()
 			fwrite(&num, sizeof(unsigned int), 1, f);
 		}
 		header += "_low_v3";
-		unsigned int headerSize = header.size();
+		size_t headerSize = header.size();
 		char *cstr = new char[headerSize + 1];
 		strcpy(cstr, header.c_str());
 		fwrite(&headerSize, sizeof(unsigned int), 1, f);
@@ -427,9 +445,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 		int rec = 1;
 		float threshold = 0.001;
 		if (numDesc < 10)
-		{
 			recursive_extract_akaze(Image, rec, threshold);
-		}
 		if (numDesc)
 		{
 			descs = new unsigned char[(numDesc + 4)*featSize];
@@ -448,8 +464,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 				for(int j = 0; j < featSize; ++j)
 				{
 					int intdesc = int(CV_descriptors.data[j+(k*featSize)]);
-					if( intdesc > 255 )
-						intdesc = 255;
+					(intdesc > 255) ? 255 : intdesc;
 					*d=unsigned char(intdesc);
 					d++;
 				}
@@ -459,7 +474,6 @@ int uchar_descriptors::extract_AKAZE_feats()
 		else
 		{
 			printf("\nError at extract_AKAZE_feats:::: Unable to extract descriptors in frame %s.", filePath.c_str());
-			
 			delete Image;
 			return 0;
 		}
@@ -469,11 +483,9 @@ int uchar_descriptors::extract_AKAZE_feats()
 	else
 	{
 		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
-		
 		delete Image;
 		return 0;
 	}
-
 	Image->empty();
 	Image->release();
 	Image->deallocate();
@@ -513,9 +525,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 		int rec = 1;
 		float threshold = 0.008;
 		if (numDesc < 10)
-		{
 			recursive_extract_akaze(Image, rec, threshold);
-		}
 		if (numDesc)
 		{
 			descs = new unsigned char[(numDesc )*featSize];
@@ -531,13 +541,11 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 				Ys[k] = key.pt.y;
 				Sizes[k] = key.size;
 				Angles[k] = key.angle;
-				for (int j = 0; j < featSize; ++j)
+				for (int j = 0; j < featSize; ++j, d++)
 				{
 					int intdesc = int(CV_descriptors.data[j + (k*featSize)]);
-					if (intdesc > 255)
-						intdesc = 255;
+					(intdesc > 255) ? 255 : intdesc;
 					*d = unsigned char(intdesc);
-					d++;
 				}
 			}
 			//printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
@@ -545,7 +553,6 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 		else
 		{
 			printf("\nError at extract_AKAZE_feats:::: Unable to extract descriptors in frame %s.", filePath.c_str());
-
 			delete Image;
 			return 0;
 		}
@@ -554,11 +561,9 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 	else
 	{
 		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
-
 		delete Image;
 		return 0;
 	}
-
 	Image->empty();
 	Image->release();
 	Image->deallocate();
@@ -597,11 +602,8 @@ int uchar_descriptors::extract_EZ_SIFT()
 			*Sp = key.scale;
 			*Ap = key.ori;
 
-			for (int l = 0; l < featSize; l++)
-			{
+			for (int l = 0; l < featSize; l++, d++)
 				*d = key.descrip[l];
-				d++;
-			}
 			Xp++;
 			Yp++;
 			Sp++;
@@ -609,7 +611,6 @@ int uchar_descriptors::extract_EZ_SIFT()
 		}
 	}
 	//printf("Feature extracted:  File: - %s... Num Features: %d\n", filePath.c_str(), numDesc);
-
 	isExist_EZSIFT = true;
 	delete Image;
 	return 1;
@@ -618,6 +619,32 @@ int uchar_descriptors::extract_EZ_SIFT()
 unsigned char* uchar_descriptors::get_data() const
 {
 	return descs;
+}
+
+int  uchar_descriptors::getDataAsMat__ReadMode(Mat &CV_Descriptors)
+{
+	if (isRead)
+	{
+		if (!CV_Descriptors.empty())
+		{
+			for (unsigned int i = 0; i<numDesc; i++)
+			{
+				const unsigned char* srcRow = &descs[i * featSize];
+				unsigned char* descRowCV = (&CV_Descriptors.data[CV_Descriptors.step*i]);
+				for (int j = 0; j<featSize; j++)
+					descRowCV[j] = srcRow[j];
+			}
+			//CV_Descriptors =  Mat(numDesc, featSize, CV_8U, descs);
+			/*for (uint y = 0; y < numDesc; y++)
+				for (uint x = 0; x < featSize; x++)
+					CV_Descriptors.at<CV_8U>[y][x] = (descs[y*featSize + x]);*/
+		}
+		else
+			printf("\nEmpty Mat file.");
+		return 1;
+	}
+	printf("\nIt is not a CV type descriptor nor Read type.");
+	return 0;
 }
 
 int uchar_descriptors::ReleaseBasePointers()
@@ -633,7 +660,6 @@ int uchar_descriptors::ReleaseBasePointers()
 	}
 	else
 		return 0;
-
 }
 
 int uchar_descriptors::ReleaseData()
@@ -646,7 +672,6 @@ int uchar_descriptors::ReleaseData()
 	}
 	else
 		return 0;
-
 }
 
 int uchar_descriptors::ReleseEZSIFT()
@@ -658,9 +683,7 @@ int uchar_descriptors::ReleseEZSIFT()
 		return 1;
 	}
 	else
-	{
 		return 0;
-	}
 }
 
 int uchar_descriptors::ReleaseCV_Feats()
@@ -678,10 +701,7 @@ int uchar_descriptors::ReleaseCV_Feats()
 		return 1;
 	}
 	else
-	{
 		return 0;
-	}
-
 }
 /************************************************************************/
 /* float type descriptor class											*/
