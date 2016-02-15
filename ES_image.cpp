@@ -150,6 +150,7 @@ int getJSON_query_image(json_t* my_source, string words_str, string wordsType)
 	try	{
 		json_object_set_new(match, wordsType.c_str(), json_string(words_str.c_str()));
 		json_object_set_new(query, "match", match);
+		json_object_set_new(my_source, "size", json_real(10));
 		json_object_set_new(my_source, "query", query);
 		return 1;
 	}
@@ -278,12 +279,12 @@ int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* m
 }
 
 int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, 
-	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<float> & scoresV)
+	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<float> & scoresV, int &totalNumELK)
 {
-	fileNamesV.push_back(my_II.fileName.c_str());
+	//fileNamesV.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
-	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + "_search";
+	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type + "/" +"_search";
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -324,7 +325,7 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 	}
 	if (httpCode == 200){
 		try{
-			json_t *rootRes, *hits, *hits2;
+			json_t *rootRes, *hits, *hits2, *totalNum;
 			json_error_t error;
 			rootRes = json_loads(httpData->data(), 0, &error);
 			if (!rootRes){
@@ -338,6 +339,8 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 				return 0;
 			}
 			hits = json_object_get(rootRes, "hits");
+			totalNum = json_object_get(hits, "total");
+			totalNumELK = json_integer_value(totalNum);
 			hits2 = json_object_get(hits, "hits");
 			if (!json_is_array(hits2)){
 				fprintf(stderr, "error: hits2 is not an array\n");
@@ -352,9 +355,10 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 			else{
 				for (int i = 0; i < 10; i++){
 					if (i < json_array_size(hits2)){
-						json_t *data, *sourceRes, *image_ID, *dscPathJSON;
+						json_t *data, *sourceRes, *image_ID, *dscPathJSON, *scoreJSON;
 						data = json_array_get(hits2, i);
 						const char *fileNameStr, *dscPathStr;
+						double scoreChar;
 						if (!json_is_object(data)){
 							fprintf(stderr, "error: commit data %d is not an object\n", i + 1);
 							return 1;
@@ -368,25 +372,27 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 						dscPathStr	= json_string_value(dscPathJSON);
 						dscPathsV.push_back(dscPathStr);
 
-						scoresV.push_back(1.00);
+						scoreJSON = json_object_get(data, "_score");
+						scoreChar = json_real_value(scoreJSON);
+						scoresV.push_back(scoreChar);
 						//releases
+						json_object_clear(scoreJSON);
 						json_object_clear(sourceRes);
 						json_object_clear(dscPathJSON);
 						json_object_clear(data);
 						json_object_clear(image_ID);
-						//delete fileNameStr;
-						//delete dscPathStr;
 					}
 					else{
 						for (int n = 0; n < 10; n++)
 						{
 							fileNamesV.push_back("100");
 							dscPathsV.push_back("100");
-							scoresV.push_back(100);
+							scoresV.push_back(000);
 						}
 					}
 				}
 				//releases	
+				json_object_clear(totalNum);
 				json_object_clear(hits2);
 				json_object_clear(hits);
 				json_decref(rootRes);
