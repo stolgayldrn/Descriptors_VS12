@@ -10,12 +10,10 @@ the terms of the BSD license (see the COPYING file).
 /* 09/10/2015															*/
 /************************************************************************/
 #include "descriptors.h"
-using namespace cv;
-using namespace std;
 
 descriptors::descriptors(const char* file_path, const char* dsc_path, 
 	FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), 
-	Angles(nullptr), EZ_keypoints(nullptr), flags(0)
+	Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -56,8 +54,51 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 	}
 }
 
+descriptors::descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
+Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0)
+{
+	filePath = file_path;
+	dscFilePath = dsc_path;
+	featType = feature;
+	numDesc = 0;
+	isExist_CV = false;
+	isExist_EZSIFT = false;
+	isRead = false;
+	image = ImageMat;
+	switch (featType)
+	{
+	case AKAZE_FEATS:
+		featSize = 61;
+		header = "AKAZE";
+		break;
+	case EZ_SIFT:
+		featSize = 128;
+		header = "EZ_SIFT_";
+		break;
+	case EZ_ROOT_SIFT:
+		featSize = 128;
+		header = "EZ_ROOT_SIFT_";
+		break;
+	case OPENCV_SIFT:
+		featSize = 128;
+		header = "OPENCV_SIFT_";
+		break;
+	case HESSIAN_SIFT:
+		featSize = 128;
+		header = "HESSIAN_SIFT_";
+		break;
+	case VL_SIFT:
+		featSize = 128;
+		header = "VL_SIFT_";
+		break;
+	default:
+		featSize = 128;
+		break;
+	}
+}
+
 descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
-Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0)
+Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0)
 {
 	dscFilePath = dsc_path;
 	filePath = "";
@@ -106,7 +147,7 @@ descriptors::~descriptors(void)
 		ReleaseCV_Feats();
 		ReleseEZSIFT();*/
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\nDescriptors: destructor error.");
 	}
@@ -160,7 +201,7 @@ descriptors::~descriptors(void)
 //
 //}
 
- int descriptors::get_KeyPoint(vector<KeyPoint> CV_Keypoints) 
+ int descriptors::Get_CVKeyPoint(std::vector<cv::KeyPoint> &CV_Keypoints) const
  {
 	if (isExist_CV||isRead)
 	{
@@ -171,8 +212,8 @@ descriptors::~descriptors(void)
 	 return 0;
  }
 
-int  descriptors::get_descriptors(Mat &CV_Descriptors) 
-{
+ int  descriptors::Get_CVDescriptors(cv::Mat &CV_Descriptors) const
+ {
 	if (isExist_CV)
 	{
 		CV_Descriptors = CV_descriptors;
@@ -182,37 +223,47 @@ int  descriptors::get_descriptors(Mat &CV_Descriptors)
 	return 0;
 }
 
-unsigned int descriptors::get_num_descriptors() const
+unsigned int descriptors::GetNumOfDescriptors() const
 {
 	return numDesc;
 }
- 
-vector<float> descriptors::getCoordsX()
+
+std::vector<float> descriptors::getCoordsX() const
 {
-	vector<float> coords;
+	std::vector<float> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
 		coords.push_back(Xs[i]);
 	return coords;
 }
 
-vector<float> descriptors::getCoordsY()
+std::vector<float> descriptors::getCoordsY() const
 {
-	vector<float> coords;
+	std::vector<float> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
 		coords.push_back(Ys[i]);
 	return coords;
 }
 
 
-vector<Point2f> descriptors::getCoords()
+std::vector<cv::Point2f> descriptors::GetCoords() const
 {
-	vector<Point2f> coords;
+	std::vector<cv::Point2f> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
-		coords.push_back(Point2f(Xs[i], Ys[i]));
+		coords.push_back(cv::Point2f(Xs[i], Ys[i]));
 	return coords;
 }
 
-int descriptors::getFeatureSize()
+int descriptors::GetImageHeight() const
+{
+	return height;
+}
+
+int descriptors::GetImageWidth() const
+{
+	return width;
+}
+
+int descriptors::GetFeatureSize() const
 {
 	return featSize;
 }
@@ -227,14 +278,15 @@ uchar_descriptors::~uchar_descriptors(void)
 		flags *= ReleaseData();
 		flags *= ReleaseCV_Feats();
 		flags *= ReleseEZSIFT();
+		flags *= ReleaseImgMat();
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\ntype1_descriptors: destructor error.");
 	}	
 }
 
-int uchar_descriptors::write_dsc()
+int uchar_descriptors::WriteDSC()
 {
 	if (dscFilePath =="")
 	{
@@ -263,14 +315,14 @@ int uchar_descriptors::write_dsc()
 		delete[] cstr;
 		return 1;
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\nWrite dsc file error: ", e.msg.c_str());
 		return 0;
 	}
 }
 
-int uchar_descriptors::write_low_dsc()
+int uchar_descriptors::WriteLowDSC()
 {
 	if (dscFilePath == "")
 	{
@@ -307,17 +359,17 @@ int uchar_descriptors::write_low_dsc()
 		delete[] cstr;
 		return 1;
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\nWrite dsc file error: ", e.msg.c_str());
 		return 0;
 	}
 }
 
-int uchar_descriptors::read_dsc()
+int uchar_descriptors::ReadDSC()
 {
 	FILE *f;
-	string  myFilePath = dscFilePath;
+	std::string  myFilePath = dscFilePath;
 	fopen_s(&f, myFilePath.c_str(), "rb");
 	if (f)
 	{
@@ -361,7 +413,7 @@ int uchar_descriptors::read_dsc()
 	return 1;
 }
 
-int uchar_descriptors::read_dsc_v1()
+int uchar_descriptors::ReadDSC__ver1()
 {
 	FILE *f;
 	fopen_s(&f,dscFilePath.c_str(), "rb");
@@ -369,7 +421,7 @@ int uchar_descriptors::read_dsc_v1()
 	{
 		unsigned long long hash;
 		char *cstr = new char[100];
-		fread(cstr, sizeof(string), 1, f);
+		fread(cstr, sizeof(std::string), 1, f);
 		fread(&numDesc, sizeof(unsigned int), 1, f);
 		descs = new unsigned char[(numDesc+4)*featSize];
 		fread(descs, sizeof(unsigned char), (numDesc)*featSize, f);
@@ -399,44 +451,75 @@ int uchar_descriptors::read_dsc_v1()
 	return 0;
 }
 
-void uchar_descriptors::recursive_extract_akaze(Mat* Image, int rec, float threshold)
+void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, float threshold)
 {
 	CV_keypoints.clear();
 	CV_descriptors.release();
 	threshold /= 10;
-	Ptr<AKAZE> akazeRec = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
-	akazeRec->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
+	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
+	akazeRec->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
 	akazeRec->clear();
 	akazeRec.release();
 	rec++;
 	if ((numDesc < 10) && (rec < 10))
-		recursive_extract_akaze(Image, rec, threshold);
+		recursiveExtractAKAZE(Image, rec, threshold);
 }
 
-int uchar_descriptors::extract_AKAZE_feats()
+void uchar_descriptors::setResizeImage(bool reSize)
+{
+	resize = reSize;
+}
+
+void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
+{
+	if (Image->rows > maxSize || Image->cols > maxSize)
+	{
+		int h = Image->rows;
+		int w = Image->cols; 
+		double hs = h / maxSize;
+		double ws = w / maxSize;
+
+		if (h>w)
+			cv::resize(*Image, *Image, cv::Size(w / hs, h / hs), 0, 0, CV_INTER_LINEAR);
+		else
+			cv::resize(*Image, *Image, cv::Size(w / ws, h / ws), 0, 0, CV_INTER_LINEAR);
+	}
+}
+
+int uchar_descriptors::ExtractAKAZE()
 {
 	//CV_descriptors = new Mat();
 	featSize = 61;
-	Mat *Image = new Mat();
-	string myFilePath = filePath;
+	cv::Mat *Image = new cv::Mat();
+
+	std::string myFilePath = filePath;
 	try
 	{
-		*Image = imread(myFilePath, IMREAD_GRAYSCALE);
+
+		if (isImMatExist)
+			*Image = image;
+		else
+			*Image = cv::imread(myFilePath, cv::IMREAD_GRAYSCALE);
+		double maxSize = 800;
+		if (resize)
+			resizeImage(Image, maxSize);
 	}
-	catch (exception e)
+	catch (std::exception e)
 	{
 		printf("\nExtract AKAZE:::imread error:%s", e.what());
 	}
 
 	if ( Image->cols>=featSize && Image->rows>=featSize)
 	{
-		Ptr<AKAZE> akaze = AKAZE::create();
+		height = Image->rows;
+		width = Image->cols;
+		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
 		try
 		{
-			akaze->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
+			akaze->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 		}
-		catch (exception e)
+		catch (std::exception e)
 		{
 			printf("\nExtract AKAZE:::detect and compute error:%s", e.what());
 		}
@@ -445,7 +528,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 		int rec = 1;
 		float threshold = 0.001;
 		if (numDesc < 10)
-			recursive_extract_akaze(Image, rec, threshold);
+			recursiveExtractAKAZE(Image, rec, threshold);
 		if (numDesc)
 		{
 			descs = new unsigned char[(numDesc + 4)*featSize];
@@ -456,7 +539,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 			unsigned char *d = descs;
 			for (unsigned int k=0; k<numDesc; k++)
 			{
-				KeyPoint key = CV_keypoints[k];
+				cv::KeyPoint key = CV_keypoints[k];
 				Xs[k] = key.pt.x;
 				Ys[k] = key.pt.y;
 				Sizes[k] = key.size;
@@ -473,7 +556,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 		}
 		else
 		{
-			printf("\nError at extract_AKAZE_feats:::: Unable to extract descriptors in frame %s.", filePath.c_str());
+			printf("\nError at ExtractAKAZE:::: Unable to extract descriptors in frame %s.", filePath.c_str());
 			delete Image;
 			return 0;
 		}
@@ -482,7 +565,7 @@ int uchar_descriptors::extract_AKAZE_feats()
 	}
 	else
 	{
-		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
+		printf("\nError at ExtractAKAZE:::: Frame is too small : %s. ", filePath.c_str());
 		delete Image;
 		return 0;
 	}
@@ -494,29 +577,29 @@ int uchar_descriptors::extract_AKAZE_feats()
 	return 1;
 }
 
-int uchar_descriptors::extract_AKAZE_low_feats()
+int uchar_descriptors::ExtractAKAZE_low()
 {
 	//CV_descriptors = new Mat();
 	featSize = 61;
-	Mat *Image = new Mat();
-	string myFilePath = filePath;
+	cv::Mat *Image = new cv::Mat();
+	std::string myFilePath = filePath;
 	try
 	{
-		*Image = imread(myFilePath, IMREAD_GRAYSCALE);
+		*Image = imread(myFilePath, cv::IMREAD_GRAYSCALE);
 	}
-	catch (exception e)
+	catch (std::exception e)
 	{
 		printf("\nExtract AKAZE:::imread error:%s", e.what());
 	}
 
 	if (Image->cols >= featSize && Image->rows >= featSize)
 	{
-		Ptr<AKAZE> akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.008, 40, 4);
+		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.008, 40, 4);
 		try
 		{
-			akaze->detectAndCompute(*Image, noArray(), CV_keypoints, CV_descriptors);
+			akaze->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 		}
-		catch (exception e)
+		catch (std::exception e)
 		{
 			printf("\nExtract AKAZE:::detect and compute error:%s", e.what());
 		}
@@ -525,7 +608,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 		int rec = 1;
 		float threshold = 0.008;
 		if (numDesc < 10)
-			recursive_extract_akaze(Image, rec, threshold);
+			recursiveExtractAKAZE(Image, rec, threshold);
 		if (numDesc)
 		{
 			descs = new unsigned char[(numDesc )*featSize];
@@ -536,7 +619,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 			unsigned char *d = descs;
 			for (unsigned int k = 0; k<numDesc; k++)
 			{
-				KeyPoint key = CV_keypoints[k];
+				cv::KeyPoint key = CV_keypoints[k];
 				Xs[k] = key.pt.x;
 				Ys[k] = key.pt.y;
 				Sizes[k] = key.size;
@@ -552,7 +635,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 		}
 		else
 		{
-			printf("\nError at extract_AKAZE_feats:::: Unable to extract descriptors in frame %s.", filePath.c_str());
+			printf("\nError at ExtractAKAZE:::: Unable to extract descriptors in frame %s.", filePath.c_str());
 			delete Image;
 			return 0;
 		}
@@ -560,7 +643,7 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 	}
 	else
 	{
-		printf("\nError at extract_AKAZE_feats:::: Frame is too small : %s. ", filePath.c_str());
+		printf("\nError at ExtractAKAZE:::: Frame is too small : %s. ", filePath.c_str());
 		delete Image;
 		return 0;
 	}
@@ -572,11 +655,11 @@ int uchar_descriptors::extract_AKAZE_low_feats()
 	return 1;
 }
 
-int uchar_descriptors::extract_EZ_SIFT()
+int uchar_descriptors::ExtractEZSIFT()
 {
-	Mat *Image = new Mat();
-	string myFilePath = filePath;
-	*Image = imread(myFilePath,IMREAD_GRAYSCALE);
+	cv::Mat *Image = new cv::Mat();
+	std::string myFilePath = filePath;
+	*Image = cv::imread(myFilePath, cv::IMREAD_GRAYSCALE);
 	int *numKpts = new int();
 
 	EZ_keypoints  = extract_ezsift(Image->data,Image->cols, Image->rows,Image->step,numKpts);
@@ -616,12 +699,12 @@ int uchar_descriptors::extract_EZ_SIFT()
 	return 1;
 }
 
-unsigned char* uchar_descriptors::get_data() const
+unsigned char* uchar_descriptors::GetUCHAR_descriptors() const
 {
 	return descs;
 }
 
-int  uchar_descriptors::getDataAsMat__ReadMode(Mat &CV_Descriptors)
+int  uchar_descriptors::GetReadModeDescriptors(cv::Mat &CV_Descriptors)
 {
 	if (isRead)
 	{
@@ -700,9 +783,21 @@ int uchar_descriptors::ReleaseCV_Feats()
 		isExist_CV = false;
 		return 1;
 	}
-	else
-		return 0;
+	return 0;
 }
+
+int uchar_descriptors::ReleaseImgMat()
+{
+	if (isImMatExist)
+	{
+		image.release();
+		image.deallocate();
+		image.~Mat();
+		return 1;
+	}
+	return 0;
+}
+
 /************************************************************************/
 /* float type descriptor class											*/
 /************************************************************************/
@@ -714,7 +809,7 @@ float_descriptors::~float_descriptors(void)
 		flags *= ReleaseCV_Feats();
 		flags *= ReleseEZSIFT();
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\ntype1_descriptors: destructor error.");
 	}
@@ -733,7 +828,7 @@ int float_descriptors::write_dsc() const
 		unsigned long long hash = dsc_magic;
 		struct _iobuf* f = new FILE();
 		fopen_s(&f, dscFilePath.c_str(), "wb");
-		fwrite(&header, sizeof(string), 1, f);
+		fwrite(&header, sizeof(std::string), 1, f);
 		fwrite(&numDesc, sizeof(unsigned int), 1, f);
 		fwrite(descs, sizeof(float), numDesc*featSize, f);
 		fwrite(&hash, sizeof(unsigned long long), 1, f);
@@ -744,7 +839,7 @@ int float_descriptors::write_dsc() const
 		fclose(f);
 		return 1;
 	}
-	catch (Exception e)
+	catch (cv::Exception e)
 	{
 		printf("\nWrite dsc file error: ", e.msg.c_str());
 		return 0;
@@ -759,7 +854,7 @@ int float_descriptors::read_dsc_v1()
 	{
 		unsigned long long hash;
 		char *cstr = new char[100];
-		fread(cstr, sizeof(string), 1, f);
+		fread(cstr, sizeof(std::string), 1, f);
 		fread(&numDesc, sizeof(unsigned int), 1, f);
 		descs = new float[(numDesc+4)*featSize];
 		fread(descs, sizeof(float), (numDesc)*featSize, f);
@@ -788,8 +883,8 @@ int float_descriptors::read_dsc_v1()
 
 int float_descriptors::extract_EZ_SIFT()
 {
-	Mat *Image = new Mat();
-	*Image = imread(filePath,IMREAD_GRAYSCALE);
+	cv::Mat *Image = new cv::Mat();
+	*Image = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
 	int *numKpts = new int();
 
 	EZ_keypoints  = extract_ezsift(Image->data,Image->cols, Image->rows,Image->step,numKpts);
@@ -833,8 +928,8 @@ int float_descriptors::extract_EZ_SIFT()
 
 int float_descriptors::extract_EZ_ROOT_SIFT()
 {
-	Mat *Image = new Mat();
-	*Image = imread(filePath,IMREAD_GRAYSCALE);
+	cv::Mat *Image = new cv::Mat();
+	*Image = cv::imread(filePath, cv::IMREAD_GRAYSCALE);
 	int *numKpts = new int();
 
 	EZ_keypoints  = extract_ezsift(Image->data,Image->cols, Image->rows,Image->step,numKpts);

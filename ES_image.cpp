@@ -1,9 +1,8 @@
 #include "ES_image.h"
 
-using namespace std;
 
 
-int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_str)
+int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str)
 {
 	try{
 		json_object_set_new(my_source, "data_set", json_string(my_II.dataSet.c_str()));
@@ -18,10 +17,10 @@ int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_
 		json_object_set_new(my_source, "disk_path", json_string(my_II.path.c_str()));
 		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
 	}
-	catch (exception e){
-		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-		cout << "# ERR: " << e.what();
+	catch (std::exception e){
+		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+		std::cout << "# ERR: " << e.what();
 	}
 	if (!json_is_object(my_source)){
 		fprintf(stderr, "error: commits is not an array\n");
@@ -30,7 +29,7 @@ int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_
 	return 1;
 }
 
-int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_str, string words_str_low)
+int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str, std::string words_str_low)
 {
 	try{
 		json_object_set_new(my_source, "data_set", json_string(my_II.dataSet.c_str()));
@@ -46,10 +45,10 @@ int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_
 		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
 		json_object_set_new(my_source, "words_string_low", json_string(words_str_low.c_str()));
 	}
-	catch (exception e){
-		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-		cout << "# ERR: " << e.what();
+	catch (std::exception e){
+		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+		std::cout << "# ERR: " << e.what();
 	}
 	if (!json_is_object(my_source)){
 		fprintf(stderr, "error: commits is not an array\n");
@@ -58,12 +57,12 @@ int getJSON_new_image(Image_Info my_II, Path p, json_t* my_source, string words_
 	return 1;
 }
 
-int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fileName)
+int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::string fileName)
 {
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
 
-	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type;
+	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type;
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -71,7 +70,7 @@ int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fil
 	headers = curl_slist_append(headers, "Content-Type: application/json");
 	// Response information.
 	int httpCode(0);
-	unique_ptr<string> httpData(new string());
+	std::unique_ptr<std::string> httpData(new std::string());
 
 	if (curl) {
 		try{
@@ -99,7 +98,7 @@ int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fil
 			//
 			delete JDumps;
 		}
-		catch (exception e){
+		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
@@ -132,7 +131,7 @@ int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fil
 			json_decref(rootRes);
 			return 1;
 		}
-		catch (exception e){
+		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
@@ -143,7 +142,7 @@ int ES_commit(ES_params my_ES, json_t* my_source, const char * ES_id, string fil
 	}
 }
 
-int getJSON_query_image(json_t* my_source, string words_str, string wordsType)
+int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wordsType)
 {
 	json_t *query = json_object();
 	json_t *match = json_object();
@@ -154,16 +153,16 @@ int getJSON_query_image(json_t* my_source, string words_str, string wordsType)
 		json_object_set_new(my_source, "query", query);
 		return 1;
 	}
-	catch (exception e){
-		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-		cout << "# ERR: " << e.what();
-		cout << ", ES State: " << e.what() << " )" << endl;
+	catch (std::exception e){
+		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+		std::cout << "# ERR: " << e.what();
+		std::cout << ", ES State: " << e.what() << " )" << std::endl;
 		return 0;
 	}
 }
 
-int getJSON_query_low_image(json_t* my_source, string words_str)
+int GetJSON__QueryLowImage(json_t* my_source, std::string words_str)
 {
 	json_t *query = json_object();
 	json_t *match = json_object();
@@ -173,22 +172,22 @@ int getJSON_query_low_image(json_t* my_source, string words_str)
 		json_object_set_new(my_source, "query", query);
 		return 1;
 	}
-	catch (exception e){
-		cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
-		cout << "# ERR: " << e.what();
-		cout << ", ES State: " << e.what() << " )" << endl;
+	catch (std::exception e){
+		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
+		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
+		std::cout << "# ERR: " << e.what();
+		std::cout << ", ES State: " << e.what() << " )" << std::endl;
 		return 0;
 	}
 }
 
-int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* my_source, Image_Info my_II)
+int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_results, json_t* my_source, Image_Info my_II)
 {
-	vector<string> ES_result;
+	std::vector<std::string> ES_result;
 	ES_result.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
-	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + "_search";
+	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + "_search";
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -222,7 +221,7 @@ int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* m
 			/* clear json dumps */
 			delete jDumps;
 		}
-		catch (exception e){
+		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
@@ -278,13 +277,13 @@ int ES_post_query(ES_params my_ES, vector<vector<string>>& ES_results, json_t* m
 	}
 }
 
-int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II, 
-	vector<string>& fileNamesV, vector<string>& dscPathsV, vector<float> & scoresV, int &totalNumELK)
+int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::vector<std::string>& fileNamesV, 
+	std::vector<std::string>& dscPathsV, std::vector<float> & scoresV, int &totalNumELK)
 {
 	//fileNamesV.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
-	string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type + "/" +"_search";
+	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type + "/" +"_search";
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -316,9 +315,10 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 			/* free headers */
 			curl_slist_free_all(headers);
 			//Clear JSON
-			delete jsonDump;
+			free(jsonDump);
+			//delete jsonDump;
 		}
-		catch (exception e){
+		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
@@ -399,7 +399,7 @@ int ES_post_query(ES_params my_ES, json_t* my_source, Image_Info my_II,
 				return 1;
 			}
 		}
-		catch (exception e){
+		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
@@ -416,7 +416,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, Path p)
 		VT->init_read(p.VocTree.c_str());
 		return 1;
 	}
-	catch (exception e){
+	catch (std::exception e){
 		printf("\nInitialization error: ", e.what());
 		return 0;
 	}
@@ -428,7 +428,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p)
 		VT->init_read(p.VocTree.c_str());
 		
 	}
-	catch (exception e){
+	catch (std::exception e){
 		printf("\nInitialization error: ", e.what());
 		return 0;
 	}
@@ -437,7 +437,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p)
 		VT_low->init_read(p.VocTreeLow.c_str());
 		
 	}
-	catch (exception e){
+	catch (std::exception e){
 		printf("\nInitialization error: ", e.what());
 		return 0;
 	}
