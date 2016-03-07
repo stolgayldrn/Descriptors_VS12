@@ -455,14 +455,14 @@ void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, float thr
 {
 	CV_keypoints.clear();
 	CV_descriptors.release();
-	threshold /= 10;
+	threshold = (numDesc<MIN_FEATURE_SIZE) ? threshold/10: threshold*4;
 	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
 	akazeRec->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
 	akazeRec->clear();
 	akazeRec.release();
 	rec++;
-	if ((numDesc < 10) && (rec < 10))
+	if (((numDesc < MIN_FEATURE_SIZE) || (numDesc > MAX_FEATURE_SIZE)) && (rec < 10))
 		recursiveExtractAKAZE(Image, rec, threshold);
 }
 
@@ -527,7 +527,7 @@ int uchar_descriptors::ExtractAKAZE()
 		numDesc = CV_descriptors.rows;
 		int rec = 1;
 		float threshold = 0.001;
-		if (numDesc < 10)
+		if (numDesc < MIN_FEATURE_SIZE || numDesc > MAX_FEATURE_SIZE)
 			recursiveExtractAKAZE(Image, rec, threshold);
 		if (numDesc)
 		{

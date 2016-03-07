@@ -14,7 +14,8 @@
 #include "dirent.h"
 #include "vld.h"
 #define dsc_magic 111222333444
-
+#define MIN_FEATURE_SIZE 30
+#define	MAX_FEATURE_SIZE 1000
 
 typedef enum FeatureType { AKAZE_FEATS=101, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT };
 

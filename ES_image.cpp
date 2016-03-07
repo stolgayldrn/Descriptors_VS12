@@ -1,7 +1,6 @@
 #include "ES_image.h"
 
 
-
 int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str)
 {
 	try{
@@ -149,7 +148,7 @@ int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wo
 	try	{
 		json_object_set_new(match, wordsType.c_str(), json_string(words_str.c_str()));
 		json_object_set_new(query, "match", match);
-		json_object_set_new(my_source, "size", json_real(10));
+		json_object_set_new(my_source, "size", json_real(QUERY_RETURN_SIZE));
 		json_object_set_new(my_source, "query", query);
 		return 1;
 	}
@@ -241,7 +240,7 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 			return 0;
 		}
 		else{
-			for (int i = 0; i < 10; i++){
+			for (int i = 0; i < QUERY_RETURN_SIZE; i++){
 				if (i < json_array_size(hits2)){
 					json_t *data, *sourceRes, *image_ID;
 					data = json_array_get(hits2, i);
@@ -330,7 +329,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			rootRes = json_loads(httpData->data(), 0, &error);
 			if (!rootRes){
 				fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
-				for (int n = 0; n < 10; n++)
+				for (int n = 0; n < QUERY_RETURN_SIZE; n++)
 				{
 					fileNamesV.push_back("-1");
 					dscPathsV.push_back("-1");
@@ -344,7 +343,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			hits2 = json_object_get(hits, "hits");
 			if (!json_is_array(hits2)){
 				fprintf(stderr, "error: hits2 is not an array\n");
-				for (int n = 0; n < 10; n++)
+				for (int n = 0; n < QUERY_RETURN_SIZE; n++)
 				{
 					fileNamesV.push_back("-1");
 					dscPathsV.push_back("-1");
@@ -352,62 +351,59 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 				}
 				return 0;
 			}
-			else{
-				for (int i = 0; i < 10; i++){
-					if (i < json_array_size(hits2)){
-						json_t *data, *sourceRes, *image_ID, *dscPathJSON, *scoreJSON;
-						data = json_array_get(hits2, i);
-						const char *fileNameStr, *dscPathStr;
-						double scoreChar;
-						if (!json_is_object(data)){
-							fprintf(stderr, "error: commit data %d is not an object\n", i + 1);
-							return 1;
-						}
-						sourceRes	= json_object_get(data, "_source");
-						image_ID	= json_object_get(sourceRes, "file_name");
-						fileNameStr = json_string_value(image_ID);
-						fileNamesV.push_back(fileNameStr);
 
-						dscPathJSON	= json_object_get(sourceRes, "disk_path");
-						dscPathStr	= json_string_value(dscPathJSON);
-						dscPathsV.push_back(dscPathStr);
-
-						scoreJSON = json_object_get(data, "_score");
-						scoreChar = json_real_value(scoreJSON);
-						scoresV.push_back(scoreChar);
-						//releases
-						json_object_clear(scoreJSON);
-						json_object_clear(sourceRes);
-						json_object_clear(dscPathJSON);
-						json_object_clear(data);
-						json_object_clear(image_ID);
+			for (int i = 0; i < QUERY_RETURN_SIZE; i++){
+				if (i < json_array_size(hits2)){
+					json_t *data, *sourceRes, *image_ID, *dscPathJSON, *scoreJSON;
+					data = json_array_get(hits2, i);
+					const char *fileNameStr, *dscPathStr;
+					double scoreChar;
+					if (!json_is_object(data)){
+						fprintf(stderr, "error: commit data %d is not an object\n", i + 1);
+						return 1;
 					}
-					else{
-						for (int n = 0; n < 10; n++)
-						{
-							fileNamesV.push_back("100");
-							dscPathsV.push_back("100");
-							scoresV.push_back(000);
-						}
+					sourceRes	= json_object_get(data, "_source");
+					image_ID	= json_object_get(sourceRes, "file_name");
+					fileNameStr = json_string_value(image_ID);
+					fileNamesV.push_back(fileNameStr);
+
+					dscPathJSON	= json_object_get(sourceRes, "disk_path");
+					dscPathStr	= json_string_value(dscPathJSON);
+					dscPathsV.push_back(dscPathStr);
+
+					scoreJSON = json_object_get(data, "_score");
+					scoreChar = json_real_value(scoreJSON);
+					scoresV.push_back(scoreChar);
+					//releases
+					json_object_clear(scoreJSON);
+					json_object_clear(sourceRes);
+					json_object_clear(dscPathJSON);
+					json_object_clear(data);
+					json_object_clear(image_ID);
+				}
+				else{
+					for (int n = 0; n < QUERY_RETURN_SIZE; n++)
+					{
+						fileNamesV.push_back("100");
+						dscPathsV.push_back("100");
+						scoresV.push_back(000);
 					}
 				}
-				//releases	
-				json_object_clear(totalNum);
-				json_object_clear(hits2);
-				json_object_clear(hits);
-				json_decref(rootRes);
-				return 1;
 			}
+			//releases	
+			json_object_clear(totalNum);
+			json_object_clear(hits2);
+			json_object_clear(hits);
+			json_decref(rootRes);
+			return 1;
 		}
 		catch (std::exception e){
 			printf("\nElasticsearch error: ", e.what());
 			return 0;
 		}
 	}
-	else{
-		printf("\nElasticsearch error: Connection Error___   ");
-		return 0;
-	}
+	printf("\nElasticsearch error: Connection Error___   ");
+	return 0;
 }
 
 int VocTreeInit(TVoctreeVLFeat* VT, Path p)

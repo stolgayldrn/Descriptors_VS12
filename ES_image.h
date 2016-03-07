@@ -12,6 +12,8 @@
 #include <memory>
 #include "vld.h"
 
+#define QUERY_RETURN_SIZE  10
+
 
 struct Path
 {
