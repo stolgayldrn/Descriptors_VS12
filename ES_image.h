@@ -12,7 +12,7 @@
 #include <memory>
 #include "vld.h"
 
-#define QUERY_RETURN_SIZE  10
+#define QUERY_RETURN_SIZE  25
 
 
 struct Path
@@ -23,6 +23,8 @@ struct Path
 	std::string imgFoldName;
 	std::string VocTree;
 	std::string VocTreeLow;
+	std::string corruptedFilesFolder;
+	std::string logPath;
 	int subFolderingLevel;
 };
 

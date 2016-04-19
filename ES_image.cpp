@@ -56,6 +56,7 @@ int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string w
 	return 1;
 }
 
+// ReSharper disable once CppEntityAssignedButNoRead
 int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::string fileName)
 {
 	CURL *curl = curl_easy_init();
@@ -73,7 +74,7 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 
 	if (curl) {
 		try{
-			CURLcode res;
+			//CURLcode res;
 			/* set curl options */
 			curl_easy_setopt(curl, CURLOPT_URL, ES_new_object_url.c_str());
 			//curl_easy_setopt(curl, CURLOPT_USERPWD, userPWD);
@@ -88,7 +89,8 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 			// internally be passed as a void pointer.
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
 
-			res = curl_easy_perform(curl);
+			//res = curl_easy_perform(curl);
+			curl_easy_perform(curl);
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 			/* cleanup curl handle */
 			curl_easy_cleanup(curl);
@@ -98,7 +100,7 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 			delete JDumps;
 		}
 		catch (std::exception e){
-			printf("\nElasticsearch error: ", e.what());
+			printf("\nElasticsearch error: %s", e.what());
 			return 0;
 		}
 	}
@@ -113,11 +115,11 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 				fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
 				return 1;
 			}
-			int boolean;
 			const char *str;
 			int created = -1;
 			json_unpack(rootRes, "{s:s}", "_id", &str);
 			json_unpack(rootRes, "{s:b}", "created", &created);
+			// ReSharper disable once CppAssignedValueIsNeverUsed
 			ES_id = str;
 			//if (strcmp(str2, "true")==0)
 			if (!created)
@@ -131,7 +133,7 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 			return 1;
 		}
 		catch (std::exception e){
-			printf("\nElasticsearch error: ", e.what());
+			printf("\nElasticsearch error: %s", e.what());
 			return 0;
 		}
 	}
@@ -197,7 +199,7 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 	std::unique_ptr<std::string> httpData(new std::string());
 	if (curl){
 		try{
-			CURLcode res;
+			//CURLcode res;
 			char *jDumps = json_dumps(my_source, json_flags);
 			/* set curl options */
 			curl_easy_setopt(curl, CURLOPT_URL, ES_new_object_url.c_str());
@@ -211,7 +213,8 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 			// Can be any pointer type, since it will internally be passed as a void pointer.
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
 
-			res = curl_easy_perform(curl);
+			//res = curl_easy_perform(curl);
+			curl_easy_perform(curl);
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 			/* cleanup curl handle */
 			curl_easy_cleanup(curl);
@@ -221,7 +224,7 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 			delete jDumps;
 		}
 		catch (std::exception e){
-			printf("\nElasticsearch error: ", e.what());
+			printf("\nElasticsearch error: %s", e.what());
 			return 0;
 		}
 	}
@@ -293,7 +296,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 	std::unique_ptr<std::string> httpData(new std::string());
 	if (curl){
 		try{
-			CURLcode res;
+			//CURLcode res;
 			/* set curl options */
 			curl_easy_setopt(curl, CURLOPT_URL, ES_new_object_url.c_str());
 			//curl_easy_setopt(curl, CURLOPT_USERPWD, userPWD);
@@ -307,7 +310,8 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			// Can be any pointer type, since it will internally be passed as a void pointer.
 			curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
 
-			res = curl_easy_perform(curl);
+			//res = curl_easy_perform(curl);
+			curl_easy_perform(curl);
 			curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &httpCode);
 			/* cleanup curl handle */
 			curl_easy_cleanup(curl);
@@ -318,7 +322,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			//delete jsonDump;
 		}
 		catch (std::exception e){
-			printf("\nElasticsearch error: ", e.what());
+			printf("\nElasticsearch error: %s", e.what());
 			return 0;
 		}
 	}
@@ -398,7 +402,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			return 1;
 		}
 		catch (std::exception e){
-			printf("\nElasticsearch error: ", e.what());
+			printf("\nElasticsearch error: %s", e.what());
 			return 0;
 		}
 	}
@@ -413,7 +417,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, Path p)
 		return 1;
 	}
 	catch (std::exception e){
-		printf("\nInitialization error: ", e.what());
+		printf("\nInitialization error: %s", e.what());
 		return 0;
 	}
 }
@@ -425,7 +429,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p)
 		
 	}
 	catch (std::exception e){
-		printf("\nInitialization error: ", e.what());
+		printf("\nInitialization error: %s", e.what());
 		return 0;
 	}
 
@@ -434,7 +438,7 @@ int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p)
 		
 	}
 	catch (std::exception e){
-		printf("\nInitialization error: ", e.what());
+		printf("\nInitialization error: %s", e.what());
 		return 0;
 	}
 	return 1;

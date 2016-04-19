@@ -13,11 +13,14 @@
 #include "siftfast.h"
 #include "dirent.h"
 #include "vld.h"
-#define dsc_magic 111222333444
-#define MIN_FEATURE_SIZE 30
-#define	MAX_FEATURE_SIZE 1000
 
-typedef enum FeatureType { AKAZE_FEATS=101, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT };
+#define dsc_magic 111222333444
+#define MIN_FEATURE_SIZE 100
+#define	MAX_FEATURE_SIZE 1000
+#define MAX_IMAGE_SIZE 600
+#define IMAGE_RESIZE_ALG CV_INTER_LANCZOS4
+
+enum FeatureType { AKAZE_FEATS=101, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT };
 
 class descriptors
 {
@@ -38,6 +41,7 @@ public:
 	int GetFeatureSize() const;
 	int GetImageHeight() const;
 	int GetImageWidth() const;
+	cv::Mat GetImageMat() const;
 protected:
 	std::string header;
 	unsigned int numDesc;
@@ -87,17 +91,15 @@ public:
 	};
 	~uchar_descriptors(void);
 	int WriteDSC();		// arranged to v2
-	int WriteLowDSC();
 	int ReadDSC();			// arranged to v2
 	int ReadDSC__ver1();
-	void recursiveExtractAKAZE(cv::Mat* Image, int rec, float threshold);
+	void recursiveExtractAKAZE(cv::Mat* Image, int rec, double threshold);
 	static void resizeImage(cv::Mat* Image, double maxSize);
 	void setResizeImage(bool reSize);
 	int ExtractAKAZE();
-	int ExtractAKAZE_low();
 	int ExtractEZSIFT();
 	unsigned char* GetUCHAR_descriptors() const;
-	int  GetReadModeDescriptors(cv::Mat &CV_Descriptors);
+	int  GetReadModeDescriptors(cv::Mat &CV_Descriptors) const;
 	int ReleaseBasePointers();
 	int ReleaseData();
 	int ReleseEZSIFT();
