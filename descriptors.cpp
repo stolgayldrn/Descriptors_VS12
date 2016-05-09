@@ -13,7 +13,7 @@ the terms of the BSD license (see the COPYING file).
 
 descriptors::descriptors(const char* file_path, const char* dsc_path, 
 	FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), 
-	Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isImMatExist(false), resize(false)
+	Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -55,7 +55,7 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 }
 
 descriptors::descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
-Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isImMatExist(false), resize(false)
+Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -98,7 +98,7 @@ Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isImMatEx
 }
 
 descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
-Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isImMatExist(false), resize(false)
+Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	dscFilePath = dsc_path;
 	filePath = "";
@@ -201,7 +201,7 @@ descriptors::~descriptors(void)
 //
 //}
 
- int descriptors::Get_CVKeyPoint(std::vector<cv::KeyPoint> &CV_Keypoints) const
+ int descriptors::CopyOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const
  {
 	if (isExist_CV||isRead)
 	{
@@ -212,7 +212,7 @@ descriptors::~descriptors(void)
 	 return 0;
  }
 
- int  descriptors::Get_CVDescriptors(cv::Mat &CV_Descriptors) const
+ int  descriptors::CopyOpencvDescriptors(cv::Mat &CV_Descriptors) const
  {
 	if (isExist_CV)
 	{
@@ -253,6 +253,11 @@ std::vector<cv::Point2f> descriptors::GetCoords() const
 	return coords;
 }
 
+int descriptors::GetFeatureSize() const
+{
+	return featSize;
+}
+
 int descriptors::GetImageHeight() const
 {
 	return height;
@@ -263,15 +268,81 @@ int descriptors::GetImageWidth() const
 	return width;
 }
 
-cv::Mat descriptors::GetImageMat() const
+int descriptors::GetImage__Copy(cv::Mat &writeImg) const
 {
-	return image;
+	try
+	{
+		image.copyTo(writeImg);
+		return 1;
+	}
+	catch (cv::Exception)
+	{
+		return 0;
+	}
 }
 
-int descriptors::GetFeatureSize() const
+cv::Mat descriptors::GetImageMat() const
 {
-	return featSize;
+	if (isExist_OpencvMatImage)
+		return image;
+	else
+		printf("No Opencv Image");
+	return cv::Mat::ones(2, 2, CV_8U)*-1;
 }
+
+cv::Mat descriptors::GetOpencvDescriptors() const
+{
+	if (isExist_CV)
+		return CV_descriptors;
+	else
+		printf("No Opencv Descriptors");
+	return cv::Mat::ones(2, 2, CV_8U)*-1;
+}
+
+FeatureType descriptors::GetFeatureType() const
+{
+	return featType;
+}
+
+std::vector<cv::KeyPoint> descriptors::GetOpencvKeypoints() const
+{
+	if (isExist_CV)
+		return CV_keypoints;
+	else
+		printf("No Opencv Descriptors");
+	std::vector<cv::KeyPoint> returnVec;
+	returnVec.push_back(cv::KeyPoint());
+	return returnVec;
+}
+
+void descriptors::ConvertEzsiftToOpencv() 
+{
+	if (isExist_EZSIFT && !isExist_CV)
+	{
+		CV_descriptors = cv::Mat::zeros(numDesc, featSize, CV_8UC1);
+		for (int k = 0; k < numDesc; k++)
+		{
+			cv::KeyPoint cv_key_point(cv::Point2f(EZ_keypoints[k].row, EZ_keypoints[k].col),
+				EZ_keypoints[k].scale, EZ_keypoints[k].ori);
+			CV_keypoints.push_back(cv_key_point);
+		}
+		for (unsigned int y = 0; y<numDesc; y++)
+		{
+			const float* srcRow = EZ_keypoints[y].descrip;
+			unsigned char* descRowCV = (&CV_descriptors.data[CV_descriptors.step*y]);
+			for (int j = 0; j<featSize; j++)
+				descRowCV[j] = srcRow[j];
+		}
+
+		isExist_CV = true;
+	}
+	else
+		printf("\nError during ConvertEzsiftToOpencv");
+
+}
+
+
+
 /************************************************************************/
 /* unsigned char type descriptor class									*/
 /************************************************************************/
@@ -416,8 +487,8 @@ void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, double th
 {
 	CV_keypoints.clear();
 	CV_descriptors.release();
-	threshold = (numDesc<MIN_FEATURE_SIZE) ? threshold/4: threshold*2;
-	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4);
+	threshold = (numDesc<MIN_FEATURE_SIZE) ? threshold/3: threshold*2;
+	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 8, 8, cv::KAZE::DIFF_WEICKERT);
 	akazeRec->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
 	akazeRec->clear();
@@ -434,17 +505,48 @@ void uchar_descriptors::setResizeImage(bool reSize)
 
 void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
 {
+	
 	if (Image->rows > maxSize || Image->cols > maxSize)
 	{
+		//std::cout << "__RESIZED__";
 		int h = Image->rows;
 		int w = Image->cols; 
+		
+		int hss = floor(h / maxSize);
+		if (hss<2) hss = 2;
+		else if (hss<4) hss = 4;
+		else if (hss<8) hss = 8;
+		else if (hss<16) hss = 16;
+		else hss = 32;
+		
+		int wss = floor(w / maxSize);
+		if (wss<2) wss = 2;
+		else if (wss<4) wss = 4;
+		else if (wss<8) wss = 8;
+		else if (wss<16) wss = 16;
+		else wss = 32;
+		/*
+		if (h > w)
+		{
+			cv::pyrDown(*Image, *Image, cv::Size(w / hss, h / hss));
+		}
+		else
+		{
+			cv::pyrDown(*Image, *Image, cv::Size(w / wss, h / wss));
+		}*/
+
 		double hs = h / maxSize;
 		double ws = w / maxSize;
-		std::cout << "__RESIZED__";
-		if (h>w)
-			cv::resize(*Image, *Image, cv::Size(w / hs, h / hs), 0, 0, IMAGE_RESIZE_ALG);
-		else
-			cv::resize(*Image, *Image, cv::Size(w / ws, h / ws), 0, 0, IMAGE_RESIZE_ALG);
+		try{
+			if (h > w)
+				cv::resize(*Image, *Image, cv::Size(w / hss, h / hss), 0, 0, IMAGE_RESIZE_ALG);
+			else
+				cv::resize(*Image, *Image, cv::Size(w / wss, h / wss), 0, 0, IMAGE_RESIZE_ALG);
+		}
+		catch (std::exception e)
+		{
+			printf("\nMain:::Resizing Error:%s", e.what());
+		}
 	}
 }
 
@@ -456,12 +558,23 @@ int uchar_descriptors::ExtractAKAZE()
 	std::string myFilePath = filePath;
 	try
 	{
-		if (isImMatExist)
+		if (isExist_OpencvMatImage)
 			*Image = image;
 		else
 			*Image = cv::imread(myFilePath, cv::IMREAD_GRAYSCALE);
 		if (resize)
-			resizeImage(Image, MAX_IMAGE_SIZE);
+		{
+			try
+			{
+				resizeImage(Image, MAX_IMAGE_SIZE);
+			}
+			catch (std::exception e)
+			{
+				printf("\nExtract AKAZE:::Resizing Error:%s", e.what());
+			}
+		}
+		Image->copyTo(image);
+		isExist_OpencvMatImage = true;
 	}
 	catch (std::exception e)
 	{
@@ -472,7 +585,8 @@ int uchar_descriptors::ExtractAKAZE()
 	{
 		height = Image->rows;
 		width = Image->cols;
-		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
+		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001, 8, 8, cv::KAZE::DIFF_WEICKERT );
+		//cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
 		try
 		{
 			akaze->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
@@ -484,7 +598,7 @@ int uchar_descriptors::ExtractAKAZE()
 
 		numDesc = CV_descriptors.rows;
 		int rec = 1;
-		double threshold = 0.001;
+		double threshold = 0.0005;
 		if (numDesc < MIN_FEATURE_SIZE || numDesc > MAX_FEATURE_SIZE)
 			recursiveExtractAKAZE(Image, rec, threshold);
 		if (numDesc)
@@ -541,7 +655,22 @@ int uchar_descriptors::ExtractEZSIFT()
 {
 	cv::Mat *Image = new cv::Mat();
 	std::string myFilePath = filePath;
-	*Image = cv::imread(myFilePath, cv::IMREAD_GRAYSCALE);
+	try
+	{
+		if (isExist_OpencvMatImage)
+			*Image = image;
+		else
+			*Image = cv::imread(myFilePath, cv::IMREAD_GRAYSCALE);
+		if (resize)
+			resizeImage(Image, MAX_IMAGE_SIZE);
+
+		Image->copyTo(image);
+		isExist_OpencvMatImage = true;
+	}
+	catch (std::exception e)
+	{
+		printf("\nExtract AKAZE:::imread error:%s", e.what());
+	}
 	auto *numKpts = new int();
 
 	EZ_keypoints  = extract_ezsift(Image->data,Image->cols, Image->rows,Image->step,numKpts);
@@ -599,10 +728,6 @@ int uchar_descriptors::GetReadModeDescriptors(cv::Mat &CV_Descriptors) const
 				for (int j = 0; j<featSize; j++)
 					descRowCV[j] = srcRow[j];
 			}
-			//CV_Descriptors =  Mat(numDesc, featSize, CV_8U, descs);
-			/*for (uint y = 0; y < numDesc; y++)
-				for (uint x = 0; x < featSize; x++)
-					CV_Descriptors.at<CV_8U>[y][x] = (descs[y*featSize + x]);*/
 		}
 		else
 			printf("\nEmpty Mat file.");
@@ -670,7 +795,7 @@ int uchar_descriptors::ReleaseCV_Feats()
 
 int uchar_descriptors::ReleaseImgMat()
 {
-	if (isImMatExist)
+	if (isExist_OpencvMatImage)
 	{
 		image.release();
 		image.deallocate();

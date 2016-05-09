@@ -13,36 +13,9 @@ int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string w
 		json_object_set_new(my_source, "encoding", json_string(my_II.encoding.c_str()));
 		json_object_set_new(my_source, "height", json_string(int2string(my_II.height).c_str()));
 		json_object_set_new(my_source, "width", json_string(int2string(my_II.width).c_str()));
+		json_object_set_new(my_source, "num_of_descs", json_string(int2string(my_II.numDescs).c_str()));
 		json_object_set_new(my_source, "disk_path", json_string(my_II.path.c_str()));
 		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
-	}
-	catch (std::exception e){
-		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
-		std::cout << "# ERR: " << e.what();
-	}
-	if (!json_is_object(my_source)){
-		fprintf(stderr, "error: commits is not an array\n");
-		return 0;
-	}
-	return 1;
-}
-
-int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str, std::string words_str_low)
-{
-	try{
-		json_object_set_new(my_source, "data_set", json_string(my_II.dataSet.c_str()));
-		json_object_set_new(my_source, "data_sub_set", json_string(my_II.dataSubSet.c_str()));
-		json_object_set_new(my_source, "url", json_string(my_II.url.c_str()));
-		json_object_set_new(my_source, "file_name", json_string(my_II.fileName.c_str()));
-		json_object_set_new(my_source, "descriptor_type", json_string(my_II.descriptorType.c_str()));
-		json_object_set_new(my_source, "source_type", json_string(my_II.source_type.c_str()));
-		json_object_set_new(my_source, "encoding", json_string(my_II.encoding.c_str()));
-		json_object_set_new(my_source, "height", json_string(int2string(my_II.height).c_str()));
-		json_object_set_new(my_source, "width", json_string(int2string(my_II.width).c_str()));
-		json_object_set_new(my_source, "disk_path", json_string(my_II.path.c_str()));
-		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
-		json_object_set_new(my_source, "words_string_low", json_string(words_str_low.c_str()));
 	}
 	catch (std::exception e){
 		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
@@ -151,25 +124,6 @@ int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wo
 		json_object_set_new(match, wordsType.c_str(), json_string(words_str.c_str()));
 		json_object_set_new(query, "match", match);
 		json_object_set_new(my_source, "size", json_real(QUERY_RETURN_SIZE));
-		json_object_set_new(my_source, "query", query);
-		return 1;
-	}
-	catch (std::exception e){
-		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
-		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
-		std::cout << "# ERR: " << e.what();
-		std::cout << ", ES State: " << e.what() << " )" << std::endl;
-		return 0;
-	}
-}
-
-int GetJSON__QueryLowImage(json_t* my_source, std::string words_str)
-{
-	json_t *query = json_object();
-	json_t *match = json_object();
-	try	{
-		json_object_set_new(match, "low_words_string", json_string(words_str.c_str()));
-		json_object_set_new(query, "match", match);
 		json_object_set_new(my_source, "query", query);
 		return 1;
 	}
@@ -422,24 +376,4 @@ int VocTreeInit(TVoctreeVLFeat* VT, Path p)
 	}
 }
 
-int VocTreeInit(TVoctreeVLFeat* VT, TVoctreeVLFeat* VT_low, Path p)
-{
-	try{
-		VT->init_read(p.VocTree.c_str());
-		
-	}
-	catch (std::exception e){
-		printf("\nInitialization error: %s", e.what());
-		return 0;
-	}
 
-	try{
-		VT_low->init_read(p.VocTreeLow.c_str());
-		
-	}
-	catch (std::exception e){
-		printf("\nInitialization error: %s", e.what());
-		return 0;
-	}
-	return 1;
-}

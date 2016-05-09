@@ -15,10 +15,10 @@
 #include "vld.h"
 
 #define dsc_magic 111222333444
-#define MIN_FEATURE_SIZE 100
-#define	MAX_FEATURE_SIZE 1000
-#define MAX_IMAGE_SIZE 600
-#define IMAGE_RESIZE_ALG CV_INTER_LANCZOS4
+#define MIN_FEATURE_SIZE 10
+#define	MAX_FEATURE_SIZE 40000
+#define MAX_IMAGE_SIZE 1200
+#define IMAGE_RESIZE_ALG CV_INTER_AREA
 
 enum FeatureType { AKAZE_FEATS=101, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT };
 
@@ -32,8 +32,8 @@ public:
 	/*int ReleaseBasePointers();
 	int ReleseEZSIFT();
 	int ReleaseCV_Feats();*/
-	int Get_CVKeyPoint(std::vector<cv::KeyPoint> &CV_Keypoints) const;
-	int Get_CVDescriptors(cv::Mat &CV_Descriptors) const;
+	int CopyOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const;
+	int CopyOpencvDescriptors(cv::Mat &CV_Descriptors) const;
 	unsigned int GetNumOfDescriptors() const;
 	std::vector<float> getCoordsX() const;
 	std::vector<float> getCoordsY() const;
@@ -41,7 +41,13 @@ public:
 	int GetFeatureSize() const;
 	int GetImageHeight() const;
 	int GetImageWidth() const;
+	int GetImage__Copy(cv::Mat &writeImg) const;
 	cv::Mat GetImageMat() const;
+	cv::Mat GetOpencvDescriptors() const;
+	FeatureType GetFeatureType() const;
+	std::vector<cv::KeyPoint> GetOpencvKeypoints() const;
+	void ConvertEzsiftToOpencv();
+	//TODO: Get Keypoint and Get Descriptors fix;
 protected:
 	std::string header;
 	unsigned int numDesc;
@@ -60,7 +66,7 @@ protected:
 	int flags;
 	int height;
 	int width;
-	bool isImMatExist;
+	bool isExist_OpencvMatImage;
 	bool resize;
 };
 
@@ -71,7 +77,7 @@ public:
 	{
 		header += "_uChar";
 		flags = 1;
-		isImMatExist = false;
+		isExist_OpencvMatImage = false;
 		resize = false;
 	};
 
@@ -79,14 +85,14 @@ public:
 	{
 		header += "_uChar";
 		flags = 1;
-		isImMatExist = true;
+		isExist_OpencvMatImage = true;
 		resize = false;
 	};
 	
 	uchar_descriptors(const char* dsc_path, FeatureType feature) :descriptors(dsc_path, feature), descs(nullptr)
 	{
 		flags = 1;
-		isImMatExist = false;
+		isExist_OpencvMatImage = false;
 		resize = false;
 	};
 	~uchar_descriptors(void);
