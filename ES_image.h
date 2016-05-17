@@ -13,7 +13,7 @@
 #include "vld.h"
 
 #define QUERY_RETURN_SIZE  25
-
+#define MAX_DESCRIPTOR_SIZE_QUERY 7000
 
 struct Path
 {
@@ -36,19 +36,19 @@ struct ELK_params
 
 struct Image_Info
 {
-	std::string dataSet; // {basefolder}/{subFolder}/{subSubFolder}
-	std::string dataSubSet; // {basefolder}/{subFolder}/{subSubFolder}
-	std::string url;				// address to download
+	std::string dataSet;		// {basefolder}/{subFolder}/{subSubFolder}
+	std::string dataSubSet;		// {basefolder}/{subFolder}/{subSubFolder}
+	std::string url;			// address to download
 	std::string fileName;		// filename @database
 	std::string descriptorType;	// unique id algorithm @MYSQL
-	std::string source_type;		// "internet", "AA", ...
+	std::string source_type;	// "internet", "AA", ...
 	std::string encoding;		// "mp4", "mpg", ...
 	std::string path;			// disk path
-	double height;			// belong to source video
-	double width;			// belong to source video
-	int numDescs;			// num of descriptors
-	bool Import;			// true: import new image, false: for query video
-	bool Query;				// true: query image
+	double height;				// belong to source video
+	double width;				// belong to source video
+	int numDescs;				// num of descriptors
+	bool Import;				// true: import new image, false: for query video
+	bool Query;					// true: query image
 };
 int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str);
 int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::string fileName);

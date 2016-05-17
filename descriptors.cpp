@@ -488,7 +488,7 @@ void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, double th
 	CV_keypoints.clear();
 	CV_descriptors.release();
 	threshold = (numDesc<MIN_FEATURE_SIZE) ? threshold/3: threshold*2;
-	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 8, 8, cv::KAZE::DIFF_WEICKERT);
+	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4, cv::KAZE::DIFF_PM_G2);
 	akazeRec->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
 	akazeRec->clear();
@@ -512,7 +512,7 @@ void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
 		int h = Image->rows;
 		int w = Image->cols; 
 		
-		int hss = floor(h / maxSize);
+		/*int hss = floor(h / maxSize);
 		if (hss<2) hss = 2;
 		else if (hss<4) hss = 4;
 		else if (hss<8) hss = 8;
@@ -524,24 +524,15 @@ void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
 		else if (wss<4) wss = 4;
 		else if (wss<8) wss = 8;
 		else if (wss<16) wss = 16;
-		else wss = 32;
-		/*
-		if (h > w)
-		{
-			cv::pyrDown(*Image, *Image, cv::Size(w / hss, h / hss));
-		}
-		else
-		{
-			cv::pyrDown(*Image, *Image, cv::Size(w / wss, h / wss));
-		}*/
-
+		else wss = 32;*/
+		
 		double hs = h / maxSize;
 		double ws = w / maxSize;
 		try{
 			if (h > w)
-				cv::resize(*Image, *Image, cv::Size(w / hss, h / hss), 0, 0, IMAGE_RESIZE_ALG);
+				cv::resize(*Image, *Image, cv::Size(w / hs, h / hs), 0, 0, IMAGE_RESIZE_ALG);
 			else
-				cv::resize(*Image, *Image, cv::Size(w / wss, h / wss), 0, 0, IMAGE_RESIZE_ALG);
+				cv::resize(*Image, *Image, cv::Size(w / ws, h / ws), 0, 0, IMAGE_RESIZE_ALG);
 		}
 		catch (std::exception e)
 		{
@@ -585,7 +576,7 @@ int uchar_descriptors::ExtractAKAZE()
 	{
 		height = Image->rows;
 		width = Image->cols;
-		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001, 8, 8, cv::KAZE::DIFF_WEICKERT );
+		cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.01, 4, 6, cv::KAZE::DIFF_PM_G2 );
 		//cv::Ptr<cv::AKAZE> akaze = cv::AKAZE::create();
 		try
 		{
