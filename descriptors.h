@@ -142,4 +142,9 @@ private:
 	float* descs;
 };
 
+
+void findMatches(uchar_descriptors &descriptor_1, uchar_descriptors &descriptor_2, std::vector<cv::DMatch >& good_matches);
+void findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptors& descriptor_1, std::vector<cv::DMatch >& inMatches);
+int findFlannBasedGoodMatches(cv::Mat &descriptors_1, cv::Mat &descriptors_2, std::vector< cv::DMatch > &matches, std::vector< cv::DMatch > &good_matches, float gm_distance);
+
 #endif

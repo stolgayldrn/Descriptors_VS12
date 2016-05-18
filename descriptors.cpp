@@ -1040,3 +1040,96 @@ int float_descriptors::ReleaseCV_Feats()
 /************************************************************************/
 /* other functions														*/
 /************************************************************************/
+
+
+void findMatches(uchar_descriptors &descriptor_1, uchar_descriptors &descriptor_2, std::vector<cv::DMatch >& good_matches)
+{
+	cv::Mat feats_1, feats_2;
+	feats_1 = descriptor_1.GetOpencvDescriptors();
+	feats_2 = descriptor_2.GetOpencvDescriptors();
+
+	// Match with FLANN
+	std::vector<cv::DMatch > matches;
+	if (feats_1.type() == 0)  feats_1.convertTo(feats_1, CV_32F);
+	if (feats_2.type() == 0)  feats_2.convertTo(feats_2, CV_32F);
+
+	float gm_dist = 400;
+
+	if (feats_1.type() == feats_2.type() && feats_1.cols == feats_2.cols)
+		findFlannBasedGoodMatches(feats_1, feats_2, matches, good_matches, gm_dist);
+}
+
+void findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
+{
+
+	auto img2 = cv::imread(imgPath.c_str());
+	auto img3 = cv::imread(imgPath.c_str());
+
+	uchar_descriptors::resizeImage(&img2, 800);
+	uchar_descriptors::resizeImage(&img3, 600);
+
+	uchar_descriptors descriptor_2(imgPath.c_str(), img2, "", AKAZE_FEATS);
+	uchar_descriptors descriptor_3(imgPath.c_str(), img3, "", AKAZE_FEATS);
+
+	descriptor_1.ExtractAKAZE();
+	descriptor_2.ExtractAKAZE();
+	descriptor_3.ExtractAKAZE();
+
+	std::vector<cv::DMatch > gm_12, gm_13, gm_23;
+	findMatches(descriptor_1, descriptor_2, gm_12);
+	findMatches(descriptor_1, descriptor_3, gm_13);
+	findMatches(descriptor_2, descriptor_3, gm_23);
+
+	std::vector<int> intersectedMatches;
+	int last = 0;
+	for (int i = 0; i < gm_12.size(); i++)
+	{
+		if (gm_12[i].queryIdx < gm_13[last].queryIdx)
+			continue;
+		for (int k = last; k < gm_13.size(); k++)
+		{
+			if (gm_12[i].queryIdx == gm_13[k].queryIdx)
+			{
+				intersectedMatches.push_back(gm_12[i].queryIdx);
+				inMatches.push_back(gm_12[i]);
+				last = k;
+				continue;
+			}
+		}
+	}
+}
+
+int findFlannBasedGoodMatches(cv::Mat &descriptors_1, cv::Mat &descriptors_2, std::vector< cv::DMatch > &matches, std::vector< cv::DMatch > &good_matches, float gm_distance)
+{
+	int status = -1;
+	cv::FlannBasedMatcher matcher;
+	good_matches.clear();
+
+	if (descriptors_1.rows>4 && descriptors_2.rows>4)
+	{
+		matcher.match(descriptors_1, descriptors_2, matches);
+
+		if (matches.size()>0)
+		{
+			//-- Quick calculation of max and min distances between keypoints
+			double max_dist = 0; double min_dist = matches[0].distance;
+
+			for (int i = 0; i < matches.size(); i++)
+			{
+				double dist = matches[i].distance;
+				if (dist < min_dist) min_dist = dist;
+				if (dist > max_dist) max_dist = dist;
+			}
+
+			for (int i = 0; i < matches.size(); i++)
+			{
+				if (matches[i].distance <= max(2 * min_dist, gm_distance))
+					good_matches.push_back(matches[i]);
+			}
+		}
+
+		matcher.clear();
+	}
+
+	return status;
+}
