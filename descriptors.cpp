@@ -811,7 +811,6 @@ float_descriptors::~float_descriptors(void)
 	{
 		printf("\ntype1_descriptors: destructor error.");
 	}
-	
 }
 
 int float_descriptors::write_dsc() const
@@ -1059,9 +1058,9 @@ void findMatches(uchar_descriptors &descriptor_1, uchar_descriptors &descriptor_
 		findFlannBasedGoodMatches(feats_1, feats_2, matches, good_matches, gm_dist);
 }
 
-void findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
+int findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
 {
-
+	int status = 0;
 	auto img2 = cv::imread(imgPath.c_str());
 	auto img3 = cv::imread(imgPath.c_str());
 
@@ -1071,32 +1070,46 @@ void findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptor
 	uchar_descriptors descriptor_2(imgPath.c_str(), img2, "", AKAZE_FEATS);
 	uchar_descriptors descriptor_3(imgPath.c_str(), img3, "", AKAZE_FEATS);
 
-	descriptor_1.ExtractAKAZE();
-	descriptor_2.ExtractAKAZE();
-	descriptor_3.ExtractAKAZE();
-
-	std::vector<cv::DMatch > gm_12, gm_13, gm_23;
-	findMatches(descriptor_1, descriptor_2, gm_12);
-	findMatches(descriptor_1, descriptor_3, gm_13);
-	findMatches(descriptor_2, descriptor_3, gm_23);
-
-	std::vector<int> intersectedMatches;
-	int last = 0;
-	for (int i = 0; i < gm_12.size(); i++)
+	try
 	{
-		if (gm_12[i].queryIdx < gm_13[last].queryIdx)
-			continue;
-		for (int k = last; k < gm_13.size(); k++)
+		status = descriptor_1.ExtractAKAZE();
+		status = descriptor_2.ExtractAKAZE();
+		status = descriptor_3.ExtractAKAZE();
+	}
+	catch (cv::Exception e)
+	{
+		printf("\nError at findIntersectedFeatures functions.");
+		return status;
+	}
+	if (status && (descriptor_1.GetNumOfDescriptors()> 0) && 
+		(descriptor_2.GetNumOfDescriptors()> 0) && 
+		(descriptor_3.GetNumOfDescriptors()> 0))
+	{
+		std::vector<cv::DMatch > gm_12, gm_13, gm_23;
+		findMatches(descriptor_1, descriptor_2, gm_12);
+		findMatches(descriptor_1, descriptor_3, gm_13);
+		findMatches(descriptor_2, descriptor_3, gm_23);
+
+		std::vector<int> intersectedMatches;
+		int last = 0;
+		for (int i = 0; i < gm_12.size(); i++)
 		{
-			if (gm_12[i].queryIdx == gm_13[k].queryIdx)
-			{
-				intersectedMatches.push_back(gm_12[i].queryIdx);
-				inMatches.push_back(gm_12[i]);
-				last = k;
+			if (gm_12[i].queryIdx < gm_13[last].queryIdx)
 				continue;
+			for (int k = last; k < gm_13.size(); k++)
+			{
+				if (gm_12[i].queryIdx == gm_13[k].queryIdx)
+				{
+					intersectedMatches.push_back(gm_12[i].queryIdx);
+					inMatches.push_back(gm_12[i]);
+					last = k;
+					continue;
+				}
 			}
 		}
 	}
+	else status = -1;
+	return status;
 }
 
 int findFlannBasedGoodMatches(cv::Mat &descriptors_1, cv::Mat &descriptors_2, std::vector< cv::DMatch > &matches, std::vector< cv::DMatch > &good_matches, float gm_distance)
