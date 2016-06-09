@@ -1,28 +1,22 @@
 #include "uchar_descriptors.h"
-
-
-
-
-/************************************************************************/
-/* unsigned char type descriptor class									*/
-/************************************************************************/
-uchar_descriptors::~uchar_descriptors(void)
+/** @brief The destructor*/
+UcharDescriptors::~UcharDescriptors(void)
 {
 	try
 	{
-		flags *= ReleaseBasePointers();
-		flags *= ReleaseData();
-		flags *= ReleaseCV_Feats();
-		flags *= ReleseEZSIFT();
-		flags *= ReleaseImgMat();
+		flags *= releaseBasePointers();
+		flags *= releaseData();
+		flags *= releaseOpencvFeats();
+		flags *= releseEZSIFT();
+		flags *= releaseImgMat();
 	}
 	catch (cv::Exception e)
 	{
 		printf("\ntype1_descriptors: destructor error.");
 	}
 }
-
-int uchar_descriptors::WriteDSC()
+/** @brief Writing the feature, keypoints and path of the descriptor as a dsc file.*/
+int UcharDescriptors::writeDSC()
 {
 	if (dscFilePath == "")
 	{
@@ -58,7 +52,8 @@ int uchar_descriptors::WriteDSC()
 	}
 }
 
-int uchar_descriptors::ReadDSC()
+/** @brief Reading the feature, keypoints and path of the descriptor from a dsc file.*/
+int UcharDescriptors::readDSC()
 {
 	FILE *f;
 	std::string  myFilePath = dscFilePath;
@@ -105,7 +100,11 @@ int uchar_descriptors::ReadDSC()
 	return 1;
 }
 
-int uchar_descriptors::ReadDSC__ver1()
+/** @brief Reading the feature, keypoints and path of the descriptor from a dsc file.
+
+@note Old version: the version with string type header. 
+*/
+int UcharDescriptors::readDSC__v1()
 {
 	FILE *f;
 	fopen_s(&f, dscFilePath.c_str(), "rb");
@@ -143,12 +142,13 @@ int uchar_descriptors::ReadDSC__ver1()
 	return 0;
 }
 
-void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, double threshold)
+/** @brief */
+void UcharDescriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, double threshold)
 {
 	CV_keypoints.clear();
 	CV_descriptors.release();
 	threshold = (numDesc<MIN_FEATURE_SIZE) ? threshold / 3 : threshold * 2;
-	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 4, cv::KAZE::DIFF_PM_G2);
+	cv::Ptr<cv::AKAZE> akazeRec = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB, 0, 3, threshold, 4, 6, cv::KAZE::DIFF_PM_G2);
 	akazeRec->detectAndCompute(*Image, cv::noArray(), CV_keypoints, CV_descriptors);
 	numDesc = CV_descriptors.rows;
 	akazeRec->clear();
@@ -158,12 +158,13 @@ void uchar_descriptors::recursiveExtractAKAZE(cv::Mat* Image, int rec, double th
 		recursiveExtractAKAZE(Image, rec, threshold);
 }
 
-void uchar_descriptors::setResizeImage(bool reSize)
+/** @brief */
+void UcharDescriptors::setResizeImage(bool reSize)
 {
 	resize = reSize;
 }
 
-void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
+void UcharDescriptors::resizeImage(cv::Mat* Image, double maxSize)
 {
 
 	if (Image->rows > maxSize || Image->cols > maxSize)
@@ -200,7 +201,7 @@ void uchar_descriptors::resizeImage(cv::Mat* Image, double maxSize)
 	}
 }
 
-int uchar_descriptors::ExtractAKAZE()
+int UcharDescriptors::extractAKAZE()
 {
 	featSize = 61;
 	cv::Mat *Image = new cv::Mat();
@@ -278,7 +279,7 @@ int uchar_descriptors::ExtractAKAZE()
 		}
 		else
 		{
-			printf("\nError at ExtractAKAZE:::: Unable to extract descriptors in frame %s.", filePath.c_str());
+			printf("\nError at extractAKAZE:::: Unable to extract descriptors in frame %s.", filePath.c_str());
 			delete Image;
 			return 2;
 		}
@@ -287,7 +288,7 @@ int uchar_descriptors::ExtractAKAZE()
 	}
 	else
 	{
-		printf("\nError at ExtractAKAZE:::: Image is too small or corrupted: %s. ", filePath.c_str());
+		printf("\nError at extractAKAZE:::: Image is too small or corrupted: %s. ", filePath.c_str());
 		delete Image;
 		return 3;
 	}
@@ -301,7 +302,7 @@ int uchar_descriptors::ExtractAKAZE()
 
 
 
-int uchar_descriptors::ExtractEZSIFT()
+int UcharDescriptors::extractEZSIFT()
 {
 	cv::Mat *Image = new cv::Mat();
 	std::string myFilePath = filePath;
@@ -360,12 +361,12 @@ int uchar_descriptors::ExtractEZSIFT()
 	return 1;
 }
 
-unsigned char* uchar_descriptors::GetUCHAR_descriptors() const
+unsigned char* UcharDescriptors::getUcharDescriptors() const
 {
 	return descs;
 }
 
-int uchar_descriptors::GetReadModeDescriptors(cv::Mat &CV_Descriptors) const
+int UcharDescriptors::getReadModeDescriptors(cv::Mat &CV_Descriptors) const
 {
 	if (isRead)
 	{
@@ -387,7 +388,7 @@ int uchar_descriptors::GetReadModeDescriptors(cv::Mat &CV_Descriptors) const
 	return 0;
 }
 
-int uchar_descriptors::ReleaseBasePointers()
+int UcharDescriptors::releaseBasePointers()
 {
 	if (numDesc)
 	{
@@ -402,7 +403,7 @@ int uchar_descriptors::ReleaseBasePointers()
 		return 0;
 }
 
-int uchar_descriptors::ReleaseData()
+int UcharDescriptors::releaseData()
 {
 	if (isExist_CV || isExist_EZSIFT || isRead)
 	{
@@ -414,7 +415,7 @@ int uchar_descriptors::ReleaseData()
 		return 0;
 }
 
-int uchar_descriptors::ReleseEZSIFT()
+int UcharDescriptors::releseEZSIFT()
 {
 	if (isExist_EZSIFT)
 	{
@@ -426,7 +427,7 @@ int uchar_descriptors::ReleseEZSIFT()
 		return 0;
 }
 
-int uchar_descriptors::ReleaseCV_Feats()
+int UcharDescriptors::releaseOpencvFeats()
 {
 	if (isExist_CV)
 	{
@@ -443,7 +444,7 @@ int uchar_descriptors::ReleaseCV_Feats()
 	return 0;
 }
 
-int uchar_descriptors::ReleaseImgMat()
+int UcharDescriptors::releaseImgMat()
 {
 	if (isExist_OpencvMatImage)
 	{
@@ -460,11 +461,11 @@ int uchar_descriptors::ReleaseImgMat()
 /* other functions														*/
 /************************************************************************/
 
-void findMatches(uchar_descriptors &descriptor_1, uchar_descriptors &descriptor_2, std::vector<cv::DMatch >& good_matches)
+void findMatches(UcharDescriptors &descriptor_1, UcharDescriptors &descriptor_2, std::vector<cv::DMatch >& good_matches)
 {
 	cv::Mat feats_1, feats_2;
-	feats_1 = descriptor_1.GetOpencvDescriptors();
-	feats_2 = descriptor_2.GetOpencvDescriptors();
+	feats_1 = descriptor_1.getOpencvDescriptors();
+	feats_2 = descriptor_2.getOpencvDescriptors();
 
 	// Match with FLANN
 	std::vector<cv::DMatch > matches;
@@ -477,32 +478,32 @@ void findMatches(uchar_descriptors &descriptor_1, uchar_descriptors &descriptor_
 		findFlannBasedGoodMatches(feats_1, feats_2, matches, good_matches, gm_dist);
 }
 
-int findIntersectedFeatures(std::string imgPath, cv::Mat img1, uchar_descriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
+int findIntersectedFeatures(std::string imgPath, cv::Mat img1, UcharDescriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
 {
 	int status = 0;
 	auto img2 = cv::imread(imgPath.c_str());
 	auto img3 = cv::imread(imgPath.c_str());
 
-	uchar_descriptors::resizeImage(&img2, 800);
-	uchar_descriptors::resizeImage(&img3, 600);
+	UcharDescriptors::resizeImage(&img2, 800);
+	UcharDescriptors::resizeImage(&img3, 600);
 
-	uchar_descriptors descriptor_2(imgPath.c_str(), img2, "", AKAZE_FEATS);
-	uchar_descriptors descriptor_3(imgPath.c_str(), img3, "", AKAZE_FEATS);
+	UcharDescriptors descriptor_2(imgPath.c_str(), img2, "", AKAZE_FEATS);
+	UcharDescriptors descriptor_3(imgPath.c_str(), img3, "", AKAZE_FEATS);
 
 	try
 	{
-		status = descriptor_1.ExtractAKAZE();
-		status = descriptor_2.ExtractAKAZE();
-		status = descriptor_3.ExtractAKAZE();
+		status = descriptor_1.extractAKAZE();
+		status = descriptor_2.extractAKAZE();
+		status = descriptor_3.extractAKAZE();
 	}
 	catch (cv::Exception e)
 	{
 		printf("\nError at findIntersectedFeatures functions.");
 		return status;
 	}
-	if (status && (descriptor_1.GetNumOfDescriptors()> 0) &&
-		(descriptor_2.GetNumOfDescriptors()> 0) &&
-		(descriptor_3.GetNumOfDescriptors()> 0))
+	if (status && (descriptor_1.getNumOfDescriptors()> 0) &&
+		(descriptor_2.getNumOfDescriptors()> 0) &&
+		(descriptor_3.getNumOfDescriptors()> 0))
 	{
 		std::vector<cv::DMatch > gm_12, gm_13, gm_23;
 		findMatches(descriptor_1, descriptor_2, gm_12);

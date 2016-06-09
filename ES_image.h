@@ -1,3 +1,16 @@
+/*
+Copyright (C) 2015-2020 S.Tolga Yildiran.
+All rights reserved.
+
+This file is part of Tolga Yildiran Video Search library and is made available under
+the terms of the BSD license (see the COPYING file).
+*/
+/************************************************************************/
+/* Tolga Yildiran														*/
+/* 24/05/2016 															*/
+/* stolgayldrn@gmail.com												*/
+/************************************************************************/
+
 #ifndef ES_IMAGE_H
 #define  ES_IMAGE_H
 
@@ -26,7 +39,7 @@ struct Path
 	int subFolderingLevel;
 };
 
-struct ELK_params
+struct ELKParams
 {
 	std::string index;
 	std::string type;
@@ -34,7 +47,7 @@ struct ELK_params
 	std::string userPWD;
 };
 
-struct Image_Info
+struct ImageInfo
 {
 	std::string dataSet;		// {basefolder}/{subFolder}/{subSubFolder}
 	std::string dataSubSet;		// {basefolder}/{subFolder}/{subSubFolder}
@@ -46,15 +59,15 @@ struct Image_Info
 	std::string path;			// disk path
 	double height;				// belong to source video
 	double width;				// belong to source video
-	int numDescs;				// num of descriptors
+	int numDescs;				// num of Descriptors
 	bool Import;				// true: import new image, false: for query video
 	bool Query;					// true: query image
 };
-int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str);
-int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::string fileName);
-int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wordsType);
-int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_results, json_t* my_source, Image_Info my_II);
-int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::vector<std::string>& fileNamesV,
-                  std::vector<std::string>& dscPathsV, std::vector<float> & scoresV, int &totalNumELK);
-int VocTreeInit(TVoctreeVLFeat* VT, Path p);
+int getJsonForNewImage(ImageInfo thisII, Path thisP, std::string words_string, json_t* json_source);
+int commitJsonToELK(ELKParams elastic_params, json_t* json_source, std::string file_name, const char* elastic_ID);
+int getJsonForQueryImage(std::string words_string, std::string words_field_name, json_t* json_source);
+int postQueryToELK(json_t* json_source, ImageInfo thisII, ELKParams elastic_params, std::vector<std::vector<std::string>>& file_name_list);
+int postQueryToELK(ELKParams elastic_params, json_t* json_source, ImageInfo thisII, std::vector<std::string>& file_names_list,
+                   std::vector<std::string>& dsc_paths_list, std::vector<float> & scores_list, int & total_num_of_returns);
+int VocTreeInit(TVoctreeVLFeat* VT, Path thisP);
 #endif

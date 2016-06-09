@@ -1,19 +1,14 @@
-/*
-Copyright (C) 2015-20 S.Tolga Yildiran.
-All rights reserved.
-
-This file is part of Tolga Yildiran Video Search library and is made available under
-the terms of the BSD license (see the COPYING file).
-*/
-/************************************************************************/
-/* Tolga Yildiran														*/
-/* 09/10/2015															*/
-/************************************************************************/
 #include "descriptors.h"
+/** @brief The image class for holding OpenCV and EZSIFT libraries based features, 
+address and statistical information about and image or dsc file.
 
-descriptors::descriptors(const char* file_path, const char* dsc_path, 
-	FeatureType feature): Xs(nullptr), Ys(nullptr), Sizes(nullptr), 
-	Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
+@param file_path The disk address of image file
+@param dsc_path The disk address of dsc file
+@param feature Type of extracted descriptor: AKAZE_FEATS, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT.
+*/
+Descriptors::Descriptors(const char* file_path, const char* dsc_path, FeatureType feature): Xs(nullptr), 
+Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), 
+flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	filePath = file_path;
 	dscFilePath = dsc_path;
@@ -53,8 +48,15 @@ descriptors::descriptors(const char* file_path, const char* dsc_path,
 		break;
 	}
 }
+/** @brief The image class for holding OpenCV and EZSIFT libraries based features, 
+address and statistical information about and image or dsc file.
 
-descriptors::descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
+@param file_path The disk address of image file.
+@param ImageMat OpenCV based image matrix.
+@param dsc_path The disk address of dsc file.
+@param feature Type of extracted descriptor: AKAZE_FEATS, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT.
+*/
+Descriptors::Descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature) : Xs(nullptr), Ys(nullptr), Sizes(nullptr),
 Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	filePath = file_path;
@@ -96,8 +98,13 @@ Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_O
 		break;
 	}
 }
+/** @brief The image class for holding OpenCV and EZSIFT libraries based features, 
+address and statistical information about and image or dsc file.
 
-descriptors::descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
+@param dsc_path The disk address of dsc file.
+@param feature Type of extracted descriptor: AKAZE_FEATS, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT.
+*/
+Descriptors::Descriptors(const char* dsc_path, FeatureType feature): Xs(nullptr), 
 Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0), height(0), width(0), isExist_OpencvMatImage(false), resize(false)
 {
 	dscFilePath = dsc_path;
@@ -138,14 +145,14 @@ Ys(nullptr), Sizes(nullptr), Angles(nullptr), EZ_keypoints(nullptr), flags(0), h
 		break;
 	}
 }
-
-descriptors::~descriptors(void)
+/** @brief The destructor*/
+Descriptors::~Descriptors(void)
 {
 	try
 	{
-		/*ReleaseBasePointers();
-		ReleaseCV_Feats();
-		ReleseEZSIFT();*/
+		/*releaseBasePointers();
+		releaseOpencvFeats();
+		releseEZSIFT();*/
 	}
 	catch (cv::Exception e)
 	{
@@ -153,7 +160,7 @@ descriptors::~descriptors(void)
 	}
 }
 
-//int descriptors::ReleaseBasePointers()
+//int Descriptors::releaseBasePointers()
 //{
 //	if(numDesc)
 //	{
@@ -169,7 +176,7 @@ descriptors::~descriptors(void)
 //	
 //}
 //
-//int descriptors::ReleseEZSIFT()
+//int Descriptors::releseEZSIFT()
 //{
 //	if (isExist_EZSIFT)
 //	{
@@ -183,7 +190,7 @@ descriptors::~descriptors(void)
 //	}
 //}
 //
-//int descriptors::ReleaseCV_Feats()
+//int Descriptors::releaseOpencvFeats()
 //{
 //	if (isExist_CV)
 //	{
@@ -200,8 +207,13 @@ descriptors::~descriptors(void)
 //	}
 //
 //}
+/** @brief Copying OpenCV type Keypoints
 
- int descriptors::CopyOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const
+@param CV_Keypoints OUTPUT
+
+@note It will be copied if the descriptors is an OpenCV type descriptor.
+*/
+ int Descriptors::getCopyOfOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const
  {
 	if (isExist_CV||isRead)
 	{
@@ -211,10 +223,15 @@ descriptors::~descriptors(void)
 	 printf("\nIt is not a CV type descriptor.");
 	 return 0;
  }
+ /** @brief Copying OpenCV type descriptors.
 
- int  descriptors::CopyOpencvDescriptors(cv::Mat &CV_Descriptors) const
+ @param CV_Descriptors OUTPUT
+
+ @note It will be copied if the descriptors is an OpenCV type descriptor.
+ */
+ int  Descriptors::getCopyOfOpencvDescriptors(cv::Mat &CV_Descriptors) const
  {
-	if (isExist_CV)
+	if (isExist_CV||isRead)
 	{
 		CV_Descriptors = CV_descriptors;
 		return 1;
@@ -222,53 +239,69 @@ descriptors::~descriptors(void)
 	printf("\nIt is not a CV type descriptor.");
 	return 0;
 }
-
-unsigned int descriptors::GetNumOfDescriptors() const
+ /** @brief Returns total number of descriptor.*/
+unsigned int Descriptors::getNumOfDescriptors() const
 {
 	return numDesc;
 }
-
-std::vector<float> descriptors::getCoordsX() const
+/** @brief Returns X coordinates vector of keypoints.*/
+std::vector<float> Descriptors::getCoordsX() const
 {
 	std::vector<float> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
 		coords.push_back(Xs[i]);
 	return coords;
 }
-
-std::vector<float> descriptors::getCoordsY() const
+/** @brief Returns Y coordinates vector of keypoints.*/
+std::vector<float> Descriptors::getCoordsY() const
 {
 	std::vector<float> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
 		coords.push_back(Ys[i]);
 	return coords;
 }
-
-
-std::vector<cv::Point2f> descriptors::GetCoords() const
+/** @brief Returns (X,Y) coordinates vector of keypoints.*/
+std::vector<cv::Point2f> Descriptors::getCoords() const
 {
 	std::vector<cv::Point2f> coords;
 	for (unsigned int i = 0; i < numDesc; i++)
 		coords.push_back(cv::Point2f(Xs[i], Ys[i]));
 	return coords;
 }
+/** @brief Returns size of the feature type.
 
-int descriptors::GetFeatureSize() const
+@note 61 for AKAZE_FEATS, 128 for all SIFT features (EZ_SIFT, HESSIAN_SIFT, vb.)
+*/
+int Descriptors::getFeatureSize() const
 {
 	return featSize;
 }
+/** @brief Returns height of image matrix.
 
-int descriptors::GetImageHeight() const
+@note If image is resized, returned height will be height of resized version, not height of original image. 
+
+*/
+int Descriptors::getImageHeight() const
 {
 	return height;
 }
+/** @brief Returns width of image matrix.
 
-int descriptors::GetImageWidth() const
+@note If image is resized, returned width will be width of resized version, not width of original image.
+
+*/
+int Descriptors::getImageWidth() const
 {
 	return width;
 }
+/** @brief Copying the image matrix.
 
-int descriptors::GetImage__Copy(cv::Mat &writeImg) const
+@param writeImg OUTPUT
+
+@note If image is resized, returned image will be the resized version of image.
+
+*/
+int Descriptors::getCopyOfImageMatrix(cv::Mat &writeImg) const
 {
 	try
 	{
@@ -280,8 +313,8 @@ int descriptors::GetImage__Copy(cv::Mat &writeImg) const
 		return 0;
 	}
 }
-
-cv::Mat descriptors::GetImageMat() const
+/** @brief Returns the image matrix.*/
+cv::Mat Descriptors::getImageMat() const
 {
 	if (isExist_OpencvMatImage)
 		return image;
@@ -289,8 +322,12 @@ cv::Mat descriptors::GetImageMat() const
 		printf("No Opencv Image");
 	return cv::Mat::ones(2, 2, CV_8U)*-1;
 }
+/** @brief Returns the OpenCV type descriptor.
 
-cv::Mat descriptors::GetOpencvDescriptors() const
+@note It will be returned if the descriptors is an OpenCV type descriptor.
+
+*/
+cv::Mat Descriptors::getOpencvDescriptors() const
 {
 	if (isExist_CV)
 		return CV_descriptors;
@@ -298,13 +335,18 @@ cv::Mat descriptors::GetOpencvDescriptors() const
 		printf("No Opencv Descriptors");
 	return cv::Mat::ones(2, 2, CV_8U)*-1;
 }
-
-FeatureType descriptors::GetFeatureType() const
+/** @brief Returns feature type of the descriptor object: AKAZE_FEATS, 
+EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT.*/
+FeatureType Descriptors::getFeatureType() const
 {
 	return featType;
 }
+/** @brief Returns OpenCV type keypoints
 
-std::vector<cv::KeyPoint> descriptors::GetOpencvKeypoints() const
+@note It will be returned if the descriptors is an OpenCV type descriptor.
+
+*/
+std::vector<cv::KeyPoint> Descriptors::getOpencvKeypoints() const
 {
 	if (isExist_CV)
 		return CV_keypoints;
@@ -314,8 +356,14 @@ std::vector<cv::KeyPoint> descriptors::GetOpencvKeypoints() const
 	returnVec.push_back(cv::KeyPoint());
 	return returnVec;
 }
+/** @brief Converts the EZ_SIFT type descriptors to OpenCV type descriptor.
 
-void descriptors::ConvertEzsiftToOpencv() 
+1. Keypoints are converted.
+
+2. EZ_Descriptors are converted.
+
+*/
+void Descriptors::convertEzsiftToOpencv() 
 {
 	if (isExist_EZSIFT && !isExist_CV)
 	{
@@ -337,7 +385,7 @@ void descriptors::ConvertEzsiftToOpencv()
 		isExist_CV = true;
 	}
 	else
-		printf("\nError during ConvertEzsiftToOpencv");
+		printf("\nError during convertEzsiftToOpencv");
 }
 /************************************************************************/
 /* other functions														*/

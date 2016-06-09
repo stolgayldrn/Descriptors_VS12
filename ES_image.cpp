@@ -1,41 +1,54 @@
 #include "ES_image.h"
 
+/***********************************************************/
+/** @brief Create JSON with JANSSON.LIB to import new image at Elastic Search Index
 
-int GetJSON__NewImage(Image_Info my_II, Path p, json_t* my_source, std::string words_str)
+@param thisII INPUT:: ImageInfo type input parameters
+@param thisP INPUT:: Path type input parameters
+@param words_string INPUT:: Concatenated visual words
+@param json_source OUTPUT:: The pointer for JSON
+*/
+int getJsonForNewImage(ImageInfo thisII, Path thisP, std::string words_string, json_t* json_source)
 {
 	try{
-		json_object_set_new(my_source, "data_set", json_string(my_II.dataSet.c_str()));
-		json_object_set_new(my_source, "data_sub_set", json_string(my_II.dataSubSet.c_str()));
-		json_object_set_new(my_source, "url", json_string(my_II.url.c_str()));
-		json_object_set_new(my_source, "file_name", json_string(my_II.fileName.c_str()));
-		json_object_set_new(my_source, "descriptor_type", json_string(my_II.descriptorType.c_str()));
-		json_object_set_new(my_source, "source_type", json_string(my_II.source_type.c_str()));
-		json_object_set_new(my_source, "encoding", json_string(my_II.encoding.c_str()));
-		json_object_set_new(my_source, "height", json_string(int2string(my_II.height).c_str()));
-		json_object_set_new(my_source, "width", json_string(int2string(my_II.width).c_str()));
-		json_object_set_new(my_source, "num_of_descs", json_string(int2string(my_II.numDescs).c_str()));
-		json_object_set_new(my_source, "disk_path", json_string(my_II.path.c_str()));
-		json_object_set_new(my_source, "words_string", json_string(words_str.c_str()));
+		json_object_set_new(json_source, "data_set", json_string(thisII.dataSet.c_str()));
+		json_object_set_new(json_source, "data_sub_set", json_string(thisII.dataSubSet.c_str()));
+		json_object_set_new(json_source, "url", json_string(thisII.url.c_str()));
+		json_object_set_new(json_source, "file_name", json_string(thisII.fileName.c_str()));
+		json_object_set_new(json_source, "descriptor_type", json_string(thisII.descriptorType.c_str()));
+		json_object_set_new(json_source, "source_type", json_string(thisII.source_type.c_str()));
+		json_object_set_new(json_source, "encoding", json_string(thisII.encoding.c_str()));
+		json_object_set_new(json_source, "height", json_string(int2string(thisII.height).c_str()));
+		json_object_set_new(json_source, "width", json_string(int2string(thisII.width).c_str()));
+		json_object_set_new(json_source, "num_of_descs", json_string(int2string(thisII.numDescs).c_str()));
+		json_object_set_new(json_source, "disk_path", json_string(thisII.path.c_str()));
+		json_object_set_new(json_source, "words_string", json_string(words_string.c_str()));
 	}
 	catch (std::exception e){
 		std::cout << "# ERR: Elasticsearch Exception in " << __FILE__;
 		std::cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << std::endl;
 		std::cout << "# ERR: " << e.what();
 	}
-	if (!json_is_object(my_source)){
+	if (!json_is_object(json_source)){
 		fprintf(stderr, "error: commits is not an array\n");
 		return 0;
 	}
 	return 1;
 }
 
-// ReSharper disable once CppEntityAssignedButNoRead
-int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::string fileName)
+/** @brief Committing JSON to Elastic Search 
+
+@param elastic_params INPUT:: Holding access parameters for elastic search index
+@param json_source INPUT:: The pointer for JSON
+@param file_name INPUT:: File name
+@param elastic_ID OUTPUT:: Elastic Search Item ID
+*/
+int commitJsonToELK(ELKParams elastic_params, json_t* json_source, std::string file_name, const char* elastic_ID)
 {
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
 
-	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type;
+	std::string ES_new_object_url = elastic_params.url + "/" + elastic_params.index + "/" + elastic_params.type;
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -53,7 +66,7 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 			//curl_easy_setopt(curl, CURLOPT_USERPWD, userPWD);
 			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-			char *JDumps = json_dumps(my_source, json_flags);
+			char *JDumps = json_dumps(json_source, json_flags);
 			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, JDumps);
 			// Hook up data handling function.
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback);
@@ -93,7 +106,7 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 			json_unpack(rootRes, "{s:s}", "_id", &str);
 			json_unpack(rootRes, "{s:b}", "created", &created);
 			// ReSharper disable once CppAssignedValueIsNeverUsed
-			ES_id = str;
+			elastic_ID = str;
 			//if (strcmp(str2, "true")==0)
 			if (!created)
 			{
@@ -115,16 +128,21 @@ int ELK__Commit(ELK_params my_ES, json_t* my_source, const char * ES_id, std::st
 		return 0;
 	}
 }
+/** @brief Create JSON with JANSSON.LIB for postting query to Elastic Search Index
 
-int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wordsType)
+@param words_string INPUT:: Concatenated visual words
+@param words_field_name INPUT:: The field name for "words string" in the Elastic Search Index 
+@param json_source OUTPUT:: The pointer for JANSSON.LIB based JSON pointer
+*/
+int getJsonForQueryImage(std::string words_string, std::string words_field_name, json_t* json_source)
 {
 	json_t *query = json_object();
 	json_t *match = json_object();
 	try	{
-		json_object_set_new(match, wordsType.c_str(), json_string(words_str.c_str()));
+		json_object_set_new(match, words_field_name.c_str(), json_string(words_string.c_str()));
 		json_object_set_new(query, "match", match);
-		json_object_set_new(my_source, "size", json_real(QUERY_RETURN_SIZE));
-		json_object_set_new(my_source, "query", query);
+		json_object_set_new(json_source, "size", json_real(QUERY_RETURN_SIZE));
+		json_object_set_new(json_source, "query", query);
 		return 1;
 	}
 	catch (std::exception e){
@@ -135,14 +153,20 @@ int GetJSON__QueryImage(json_t* my_source, std::string words_str, std::string wo
 		return 0;
 	}
 }
+/** @brief Posting created query json object to the Elastic Search Index 
 
-int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_results, json_t* my_source, Image_Info my_II)
+@param json_source INPUT:: The pointer for JSON
+@param thisII INPUT:: ImageInfo type input parameters
+@param elastic_params INPUT:: Holding access parameters for elastic search index
+@param file_name_list OUTPUT:: Name list of returned files from Elastic Search
+*/
+int postQueryToELK(json_t* json_source, ImageInfo thisII, ELKParams elastic_params, std::vector<std::vector<std::string>>& file_name_list)
 {
 	std::vector<std::string> ES_result;
-	ES_result.push_back(my_II.fileName.c_str());
+	ES_result.push_back(thisII.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
-	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + "_search";
+	std::string ES_new_object_url = elastic_params.url + "/" + elastic_params.index + "/" + "_search";
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -154,7 +178,7 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 	if (curl){
 		try{
 			//CURLcode res;
-			char *jDumps = json_dumps(my_source, json_flags);
+			char *jDumps = json_dumps(json_source, json_flags);
 			/* set curl options */
 			curl_easy_setopt(curl, CURLOPT_URL, ES_new_object_url.c_str());
 			//curl_easy_setopt(curl, CURLOPT_USERPWD, userPWD);
@@ -223,7 +247,7 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 			json_object_clear(rootRes);
 			json_object_clear(hits);
 			json_object_clear(hits2);
-			ES_results.push_back(ES_result);
+			file_name_list.push_back(ES_result);
 			ES_result.clear();
 			return 1;
 		}
@@ -232,14 +256,23 @@ int ELK_PostQuery(ELK_params my_ES, std::vector<std::vector<std::string>>& ES_re
 		return 0;
 	}
 }
+/** @brief Posting the query json object to the Elastic Search Index 
+and returning results of images names and scores 
 
-int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::vector<std::string>& fileNamesV, 
-	std::vector<std::string>& dscPathsV, std::vector<float> & scoresV, int &totalNumELK)
+@param elastic_params INPUT:: Holding access parameters for elastic search index
+@param json_source INPUT:: The pointer for JSON
+@param thisII INPUT:: ImageInfo type input parameters
+@param file_names_list OUTPUT:: Name list of returned files from Elastic Search in order to descanding Elastic Search tf-idf score
+@param dsc_paths_list OUTPUT:: Address list of returned files
+@param scores_list OUTPUT:: Elastic Search tf-idf scores list of returned files
+@param total_num_of_returns OUTPUT::Total number of returned files
+*/
+int postQueryToELK(ELKParams elastic_params, json_t* json_source, ImageInfo thisII, std::vector<std::string>& file_names_list,
+                   std::vector<std::string>& dsc_paths_list, std::vector<float> & scores_list, int & total_num_of_returns)
 {
-	//fileNamesV.push_back(my_II.fileName.c_str());
 	CURL *curl = curl_easy_init();
 	//char *userPWD = "writer:writeme";
-	std::string ES_new_object_url = my_ES.url + "/" + my_ES.index + "/" + my_ES.type + "/" +"_search";
+	std::string ES_new_object_url = elastic_params.url + "/" + elastic_params.index + "/" + elastic_params.type + "/" +"_search";
 	struct curl_slist *headers = NULL;
 	size_t json_flags = 0;
 	/* set content type */
@@ -256,7 +289,7 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 			//curl_easy_setopt(curl, CURLOPT_USERPWD, userPWD);
 			curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "GET");
 			curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-			char *jsonDump = json_dumps(my_source, json_flags);
+			char *jsonDump = json_dumps(json_source, json_flags);
 			curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonDump);
 			// Hook up data handling function.
 			curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, callback);
@@ -289,23 +322,23 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 				fprintf(stderr, "error: on line %d: %s\n", error.line, error.text);
 				for (int n = 0; n < QUERY_RETURN_SIZE; n++)
 				{
-					fileNamesV.push_back("-1");
-					dscPathsV.push_back("-1");
-					scoresV.push_back(-1);
+					file_names_list.push_back("-1");
+					dsc_paths_list.push_back("-1");
+					scores_list.push_back(-1);
 				}
 				return 0;
 			}
 			hits = json_object_get(rootRes, "hits");
 			totalNum = json_object_get(hits, "total");
-			totalNumELK = json_integer_value(totalNum);
+			total_num_of_returns = json_integer_value(totalNum);
 			hits2 = json_object_get(hits, "hits");
 			if (!json_is_array(hits2)){
 				fprintf(stderr, "error: hits2 is not an array\n");
 				for (int n = 0; n < QUERY_RETURN_SIZE; n++)
 				{
-					fileNamesV.push_back("-1");
-					dscPathsV.push_back("-1");
-					scoresV.push_back(-1);
+					file_names_list.push_back("-1");
+					dsc_paths_list.push_back("-1");
+					scores_list.push_back(-1);
 				}
 				return 0;
 			}
@@ -323,15 +356,15 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 					sourceRes	= json_object_get(data, "_source");
 					image_ID	= json_object_get(sourceRes, "file_name");
 					fileNameStr = json_string_value(image_ID);
-					fileNamesV.push_back(fileNameStr);
+					file_names_list.push_back(fileNameStr);
 
 					dscPathJSON	= json_object_get(sourceRes, "disk_path");
 					dscPathStr	= json_string_value(dscPathJSON);
-					dscPathsV.push_back(dscPathStr);
+					dsc_paths_list.push_back(dscPathStr);
 
 					scoreJSON = json_object_get(data, "_score");
 					scoreChar = json_real_value(scoreJSON);
-					scoresV.push_back(scoreChar);
+					scores_list.push_back(scoreChar);
 					//releases
 					json_object_clear(scoreJSON);
 					json_object_clear(sourceRes);
@@ -342,9 +375,9 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 				else{
 					for (int n = 0; n < QUERY_RETURN_SIZE; n++)
 					{
-						fileNamesV.push_back("100");
-						dscPathsV.push_back("100");
-						scoresV.push_back(000);
+						file_names_list.push_back("100");
+						dsc_paths_list.push_back("100");
+						scores_list.push_back(000);
 					}
 				}
 			}
@@ -363,11 +396,15 @@ int ELK_PostQuery(ELK_params my_ES, json_t* my_source, Image_Info my_II, std::ve
 	printf("\nElasticsearch error: Connection Error___   ");
 	return 0;
 }
+/** @brief Initialize VLFeat based Vocabulary Tree model with address from Path object
 
-int VocTreeInit(TVoctreeVLFeat* VT, Path p)
+@param VT The Vocabulary Tree Model
+@param thisP INPUT:: Path type input parameters
+*/
+int VocTreeInit(TVoctreeVLFeat* VT, Path thisP)
 {
 	try{
-		VT->init_read(p.VocTree.c_str());
+		VT->init_read(thisP.VocTree.c_str());
 		return 1;
 	}
 	catch (std::exception e){

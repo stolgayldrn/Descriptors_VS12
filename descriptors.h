@@ -1,3 +1,16 @@
+/*
+Copyright (C) 2015-20 S.Tolga Yildiran. 
+All rights reserved.
+
+This file is part of Tolga Yildiran Video Search library and is made available under
+the terms of the BSD license (see the COPYING file).
+*/
+/************************************************************************/
+/* Tolga Yildiran														*/
+/* 09/10/2015															*/
+/* stolgayldrn@gmail.com												*/
+/************************************************************************/
+
 #ifndef DESCRIPTORS_H
 #define DESCRIPTORS_H
 
@@ -24,31 +37,31 @@
 
 enum FeatureType { AKAZE_FEATS=101, EZ_SIFT, EZ_ROOT_SIFT, OPENCV_SIFT, HESSIAN_SIFT, VL_SIFT };
 
-class descriptors
+class Descriptors
 {
 public:
-	descriptors(const char* file_path, const char* dsc_path, FeatureType feature);
-	descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature);
-	descriptors(const char* dsc_path, FeatureType feature);
-	~descriptors(void);
-	/*int ReleaseBasePointers();
-	int ReleseEZSIFT();
-	int ReleaseCV_Feats();*/
-	int CopyOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const;
-	int CopyOpencvDescriptors(cv::Mat &CV_Descriptors) const;
-	unsigned int GetNumOfDescriptors() const;
+	Descriptors(const char* file_path, const char* dsc_path, FeatureType feature);
+	Descriptors(const char* file_path, const cv::Mat ImageMat, const char* dsc_path, FeatureType feature);
+	Descriptors(const char* dsc_path, FeatureType feature);
+	~Descriptors(void);
+	/*int releaseBasePointers();
+	int releseEZSIFT();
+	int releaseOpencvFeats();*/
+	int getCopyOfOpencvKeypoints(std::vector<cv::KeyPoint> &CV_Keypoints) const;
+	int getCopyOfOpencvDescriptors(cv::Mat &CV_Descriptors) const;
+	unsigned int getNumOfDescriptors() const;
 	std::vector<float> getCoordsX() const;
 	std::vector<float> getCoordsY() const;
-	std::vector<cv::Point2f> GetCoords() const;
-	int GetFeatureSize() const;
-	int GetImageHeight() const;
-	int GetImageWidth() const;
-	int GetImage__Copy(cv::Mat &writeImg) const;
-	cv::Mat GetImageMat() const;
-	cv::Mat GetOpencvDescriptors() const;
-	FeatureType GetFeatureType() const;
-	std::vector<cv::KeyPoint> GetOpencvKeypoints() const;
-	void ConvertEzsiftToOpencv();
+	std::vector<cv::Point2f> getCoords() const;
+	int getFeatureSize() const;
+	int getImageHeight() const;
+	int getImageWidth() const;
+	int getCopyOfImageMatrix(cv::Mat &writeImg) const;
+	cv::Mat getImageMat() const;
+	cv::Mat getOpencvDescriptors() const;
+	FeatureType getFeatureType() const;
+	std::vector<cv::KeyPoint> getOpencvKeypoints() const;
+	void convertEzsiftToOpencv();
 	//TODO: Get Keypoint and Get Descriptors fix;
 protected:
 	std::string header;
