@@ -481,8 +481,8 @@ void findMatches(UcharDescriptors &descriptor_1, UcharDescriptors &descriptor_2,
 int findIntersectedFeatures(std::string imgPath, cv::Mat img1, UcharDescriptors& descriptor_1, std::vector<cv::DMatch >& inMatches)
 {
 	int status = 0;
-	auto img2 = cv::imread(imgPath.c_str());
-	auto img3 = cv::imread(imgPath.c_str());
+	auto img2 = img1.clone();
+	auto img3 = img1.clone();
 
 	UcharDescriptors::resizeImage(&img2, 800);
 	UcharDescriptors::resizeImage(&img3, 600);
